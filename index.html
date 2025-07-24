@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Circuit Simulator</title>
+    <title>QCNS - Quantum Circuit & Network Simulator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.0.2/math.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,11 +13,26 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #FF9800;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+            --warning-color: #FFC107;
+            --background: #f5f5f5;
+            --surface: #ffffff;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border: #e0e0e0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --border-radius: 8px;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
 
         .container {
@@ -26,1149 +41,1490 @@
             padding: 20px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        .tabs {
+        /* Tab Navigation */
+        .tab-nav {
             display: flex;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 5px;
+            overflow: hidden;
         }
 
-        .tab {
+        .tab-button {
             flex: 1;
-            padding: 12px 20px;
+            padding: 15px 20px;
             background: transparent;
             border: none;
-            color: white;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
+            color: var(--text-secondary);
+            font-size: 16px;
             font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
-        .tab.active {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        .tab-button:hover {
+            color: var(--primary-color);
+            background: rgba(33, 150, 243, 0.05);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            background: rgba(33, 150, 243, 0.1);
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
         }
 
         .tab-content {
             display: none;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        .circuit-builder {
-            display: flex;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Circuit Component Styles */
+        .circuit-component {
+            display: grid;
+            grid-template-columns: 300px 1fr;
             gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .gates-panel {
-            width: 200px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            border: 2px solid #e9ecef;
-        }
-
-        .gates-panel h3, .gates-panel h4 {
-            margin-bottom: 15px;
-            color: #495057;
-        }
-
-        .gate {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: grab;
-            transition: all 0.3s;
-            font-weight: bold;
-        }
-
-        .gate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .gate:active {
-            cursor: grabbing;
-        }
-
-        .circuit-area {
-            flex: 1;
-            background: white;
-            border-radius: 10px;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             padding: 20px;
-            border: 2px solid #e9ecef;
-            min-height: 400px;
-        }
-
-        .qubit-controls {
             margin-bottom: 20px;
         }
 
-        .qubit-controls input {
-            padding: 8px 12px;
-            border: 2px solid #ddd;
+        .gate-palette {
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            border: 1px solid var(--border);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .gate-palette h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .gate-category {
+            margin-bottom: 20px;
+        }
+
+        .gate-category h4 {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .gate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 8px;
+        }
+
+        .gate-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .gate-button {
+            width: 50px;
+            height: 50px;
+            border: 2px solid;
             border-radius: 6px;
-            margin-right: 10px;
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+            margin-bottom: 4px;
+        }
+
+        .gate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .gate-button:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        .gate-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Gate Type Colors */
+        .gate-button.pauli { border-color: #f44336; color: #f44336; box-shadow: 0 0 8px rgba(244, 67, 54, 0.3); }
+        .gate-button.hadamard { border-color: #4CAF50; color: #4CAF50; box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
+        .gate-button.phase { border-color: #9C27B0; color: #9C27B0; box-shadow: 0 0 8px rgba(156, 39, 176, 0.3); }
+        .gate-button.rotation { border-color: #FF9800; color: #FF9800; box-shadow: 0 0 8px rgba(255, 152, 0, 0.3); }
+        .gate-button.control { border-color: #2196F3; color: #2196F3; box-shadow: 0 0 8px rgba(33, 150, 243, 0.3); }
+
+        /* Circuit Area */
+        .circuit-area {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .circuit-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .control-group input {
+            width: 60px;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 14px;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            margin-right: 10px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
 
-        .btn-primary {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(45deg, #28a745, #1e7e34);
-            color: white;
-        }
-
-        .btn-warning {
-            background: linear-gradient(45deg, #ffc107, #d39e00);
-            color: #212529;
-        }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-warning { background: var(--warning-color); color: #333; }
+        .btn-error { background: var(--error-color); color: white; }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .circuit-canvas {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            min-height: 300px;
+            position: relative;
+            overflow: auto;
         }
 
         .qubit-line {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
+            height: 60px;
+            margin-bottom: 10px;
+            position: relative;
         }
 
         .qubit-label {
-            width: 60px;
+            width: 50px;
+            text-align: center;
             font-weight: bold;
-            color: #495057;
+            color: var(--text-primary);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 6px;
+            margin-right: 15px;
         }
 
         .qubit-wire {
             flex: 1;
             height: 2px;
-            background: #6c757d;
+            background: var(--text-secondary);
             position: relative;
-            margin: 0 10px;
             display: flex;
             align-items: center;
         }
 
         .gate-slot {
-            width: 60px;
-            height: 40px;
-            border: 2px dashed #ddd;
+            width: 50px;
+            height: 50px;
+            border: 2px dashed var(--border);
             border-radius: 6px;
-            display: inline-flex;
+            background: var(--surface);
+            display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 10px;
-            transition: all 0.3s;
+            margin-right: 15px;
             cursor: pointer;
-            background: white;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            font-size: 14px;
         }
 
         .gate-slot:hover {
-            border-color: #007bff;
-            background: rgba(0, 123, 255, 0.1);
+            border-color: var(--primary-color);
+            background: rgba(33, 150, 243, 0.05);
+            transform: scale(1.05);
         }
 
         .gate-slot.occupied {
-            background: linear-gradient(45deg, #17a2b8, #138496);
+            border: 2px solid var(--primary-color);
+            background: var(--surface);
+            color: var(--primary-color);
+        }
+
+        .gate-slot.drag-over {
+            border-color: var(--success-color);
+            background: rgba(76, 175, 80, 0.1);
+            transform: scale(1.1);
+        }
+
+        /* Multi-qubit gate connections */
+        .connection-line {
+            position: absolute;
+            background: var(--text-primary);
+            width: 2px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .gate-slot.cnot-control {
+            background: var(--primary-color);
             color: white;
-            border: 2px solid #17a2b8;
-            font-weight: bold;
+            border-color: var(--primary-color);
+            font-size: 1.2rem;
         }
 
-        .network-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .node-panel {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            border: 2px solid #e9ecef;
-        }
-
-        .node-panel h3 {
-            color: #495057;
-            margin-bottom: 15px;
-        }
-
-        .node-panel .circuit-builder {
-            display: flex;
-            gap: 15px;
-        }
-
-        .node-panel .gates-panel {
-            width: 150px;
-            background: #fff;
-            border-radius: 8px;
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-
-        .node-panel .gates-panel h4 {
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .node-panel .gate {
-            width: 100%;
-            padding: 6px;
-            margin-bottom: 5px;
-            font-size: 12px;
-        }
-
-        .node-panel .circuit-area {
-            flex: 1;
+        .gate-slot.cnot-target {
             background: white;
-            border-radius: 8px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            min-height: 200px;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            font-size: 1.2rem;
         }
 
-        .entanglement-controls {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
+        .gate-slot.cz-control {
+            background: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+            font-size: 1.1rem;
+        }
+
+        .gate-slot.cz-target {
+            background: white;
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
+            font-size: 1rem;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .results-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
             margin-bottom: 20px;
         }
 
-        .entanglement-controls h4 {
-            color: #856404;
-            margin-bottom: 10px;
+        .result-tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
         }
 
-        .results-panel {
-            margin-top: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            border: 2px solid #e9ecef;
+        .result-tab:hover {
+            color: var(--primary-color);
+        }
+
+        .result-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .result-content {
+            display: none;
+        }
+
+        .result-content.active {
+            display: block;
         }
 
         .chart-container {
             width: 100%;
             height: 400px;
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         .state-vector {
-            background: white;
-            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
             padding: 15px;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
             margin-top: 15px;
-            border: 1px solid #ddd;
-            font-family: monospace;
+        }
+
+        /* Network Simulator Styles */
+        .network-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .network-controls {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .network-controls h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .node-list {
             max-height: 300px;
             overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--border-radius);
+            background: #f8f9fa;
         }
 
-        .qubit-checkbox {
-            margin-right: 10px;
+        .node-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
+        .node-item:last-child {
+            border-bottom: none;
         }
 
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
+        .node-item.active {
+            background: rgba(33, 150, 243, 0.1);
+            color: var(--primary-color);
         }
 
-        .drag-over {
-            background: rgba(0, 123, 255, 0.2) !important;
-            border-color: #007bff !important;
+        .node-item:hover {
+            background: rgba(33, 150, 243, 0.05);
+            cursor: pointer;
         }
 
-        .network-result {
-            background: #e7f3ff;
-            border: 2px solid #007bff;
-            border-radius: 10px;
+        .node-circuit {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+
+        .entanglement-config {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             padding: 20px;
             margin-top: 20px;
+        }
+
+        .entanglement-pair {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            margin-bottom: 10px;
+        }
+
+        .entanglement-pair label {
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .entanglement-pair select {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--surface);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success { background: var(--success-color); }
+        .notification.error { background: var(--error-color); }
+        .notification.warning { background: var(--warning-color); color: #333; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .circuit-component {
+                grid-template-columns: 250px 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .circuit-component {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .network-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .gate-grid {
+                grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+            }
+            
+            .gate-button {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 Quantum Circuit Simulator</h1>
-            <p>Advanced quantum computing simulation with drag & drop interface and network capabilities</p>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="switchTab('circuit')">
+                Circuit Simulator
+            </button>
+            <button class="tab-button" onclick="switchTab('network')">
+                Network Simulator
+            </button>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('single')">Single Circuit</button>
-            <button class="tab" onclick="showTab('network')">Quantum Network</button>
-        </div>
-
-        <!-- Single Circuit Tab -->
-        <div id="single-tab" class="tab-content active">
-            <div class="circuit-builder">
-                <div class="gates-panel">
-                    <h3>🎯 Quantum Gates</h3>
-                    <button class="gate" draggable="true" data-gate="H">H</button>
-                    <button class="gate" draggable="true" data-gate="X">X</button>
-                    <button class="gate" draggable="true" data-gate="Y">Y</button>
-                    <button class="gate" draggable="true" data-gate="Z">Z</button>
-                    <button class="gate" draggable="true" data-gate="SX">√X</button>
-                    <button class="gate" draggable="true" data-gate="SY">√Y</button>
-                    <button class="gate" draggable="true" data-gate="SZ">√Z</button>
-                    <button class="gate" draggable="true" data-gate="RX90">RX(90°)</button>
-                    <button class="gate" draggable="true" data-gate="RY90">RY(90°)</button>
-                    <button class="gate" draggable="true" data-gate="RZ90">RZ(90°)</button>
-                </div>
-
-                <div class="circuit-area">
-                    <div class="qubit-controls">
-                        <input type="number" id="numQubits" value="3" min="1" max="8" placeholder="Number of qubits">
-                        <input type="number" id="numSteps" value="5" min="1" max="20" placeholder="Number of steps">
-                        <button class="btn btn-primary" onclick="createCircuit()">Create Circuit</button>
-                        <button class="btn btn-success" onclick="runSimulation()">Run Simulation</button>
-                        <button class="btn btn-warning" onclick="clearCircuit()">Clear</button>
-                    </div>
-                    <div id="circuit" class="circuit"></div>
-                </div>
+        <!-- Circuit Simulator Tab -->
+        <div id="circuit-tab" class="tab-content active">
+            <div id="main-circuit" class="circuit-component">
+                <!-- This will be populated by the CircuitComponent -->
             </div>
 
+            <!-- Results Panel -->
             <div class="results-panel">
-                <h3>📊 Simulation Results</h3>
-                <div class="chart-container">
-                    <canvas id="probabilityChart"></canvas>
+                <h3 style="margin-bottom: 20px; color: var(--primary-color);">Simulation Results</h3>
+                <div class="results-tabs">
+                    <button class="result-tab active" onclick="switchResultTab('statevector')">State Vector</button>
+                    <button class="result-tab" onclick="switchResultTab('probabilities')">Probabilities</button>
+                    <button class="result-tab" onclick="switchResultTab('bloch')">Bloch Spheres</button>
+                    <button class="result-tab" onclick="switchResultTab('json')">Circuit JSON</button>
                 </div>
-                <div id="stateVector" class="state-vector"></div>
+
+                <div id="statevector-result" class="result-content active">
+                    <h4>Final State Vector</h4>
+                    <div id="statevector-display" class="state-vector"></div>
+                </div>
+
+                <div id="probabilities-result" class="result-content">
+                    <h4>Probability Distribution</h4>
+                    <div class="chart-container">
+                        <canvas id="probability-chart"></canvas>
+                    </div>
+                </div>
+
+                <div id="bloch-result" class="result-content">
+                    <h4>Bloch Sphere Visualization</h4>
+                    <div id="bloch-display"></div>
+                </div>
+
+                <div id="json-result" class="result-content">
+                    <h4>Circuit JSON Definition</h4>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn btn-primary" onclick="exportCircuitJSON()">Export JSON</button>
+                        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importCircuitJSON()">
+                        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Import JSON</button>
+                    </div>
+                    <pre id="circuit-json" style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow: auto; max-height: 400px;"></pre>
+                </div>
             </div>
         </div>
 
-        <!-- Quantum Network Tab -->
+        <!-- Network Simulator Tab -->
         <div id="network-tab" class="tab-content">
-            <div class="entanglement-controls">
-                <h4>🔗 Entanglement Configuration</h4>
-                <div id="entanglementConfig"></div>
-                <button class="btn btn-primary" onclick="generateNetworkCircuit()">Generate Network Circuit</button>
-            </div>
-
-            <div class="network-panel">
-                <div class="node-panel">
-                    <h3>🖥️ Node 1 Circuit</h3>
-                    <div class="circuit-builder">
-                        <div class="gates-panel">
-                            <h4>Gates</h4>
-                            <button class="gate" draggable="true" data-gate="H">H</button>
-                            <button class="gate" draggable="true" data-gate="X">X</button>
-                            <button class="gate" draggable="true" data-gate="Y">Y</button>
-                            <button class="gate" draggable="true" data-gate="Z">Z</button>
-                            <button class="gate" draggable="true" data-gate="SX">√X</button>
-                            <button class="gate" draggable="true" data-gate="SY">√Y</button>
-                            <button class="gate" draggable="true" data-gate="SZ">√Z</button>
-                            <button class="gate" draggable="true" data-gate="RX90">RX(90°)</button>
-                            <button class="gate" draggable="true" data-gate="RY90">RY(90°)</button>
-                            <button class="gate" draggable="true" data-gate="RZ90">RZ(90°)</button>
-                        </div>
-                        <div class="circuit-area">
-                            <div class="qubit-controls">
-                                <input type="number" id="node1Qubits" value="2" min="1" max="4" placeholder="Qubits">
-                                <input type="number" id="node1Steps" value="3" min="1" max="10" placeholder="Steps">
-                                <button class="btn btn-primary" onclick="createNodeCircuit(1)">Create Node 1</button>
-                            </div>
-                            <div id="node1Circuit" class="circuit"></div>
-                        </div>
+            <div class="network-layout">
+                <!-- Network Controls -->
+                <div class="network-controls">
+                    <h3>Network Nodes</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn btn-success" onclick="addNetworkNode()">Add Node</button>
+                        <button class="btn btn-error" onclick="clearNetwork()">Clear All</button>
+                        <button class="btn btn-primary" onclick="exportNetworkJSON()">Export Network</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('network-import-file').click()">Import Network</button>
+                        <input type="file" id="network-import-file" accept=".json" style="display: none;" onchange="importNetworkJSON()">
+                    </div>
+                    <div id="node-list" class="node-list">
+                        <!-- Nodes will be listed here -->
                     </div>
                 </div>
 
-                <div class="node-panel">
-                    <h3>🖥️ Node 2 Circuit</h3>
-                    <div class="circuit-builder">
-                        <div class="gates-panel">
-                            <h4>Gates</h4>
-                            <button class="gate" draggable="true" data-gate="H">H</button>
-                            <button class="gate" draggable="true" data-gate="X">X</button>
-                            <button class="gate" draggable="true" data-gate="Y">Y</button>
-                            <button class="gate" draggable="true" data-gate="Z">Z</button>
-                            <button class="gate" draggable="true" data-gate="SX">√X</button>
-                            <button class="gate" draggable="true" data-gate="SY">√Y</button>
-                            <button class="gate" draggable="true" data-gate="SZ">√Z</button>
-                            <button class="gate" draggable="true" data-gate="RX90">RX(90°)</button>
-                            <button class="gate" draggable="true" data-gate="RY90">RY(90°)</button>
-                            <button class="gate" draggable="true" data-gate="RZ90">RZ(90°)</button>
-                        </div>
-                        <div class="circuit-area">
-                            <div class="qubit-controls">
-                                <input type="number" id="node2Qubits" value="2" min="1" max="4" placeholder="Qubits">
-                                <input type="number" id="node2Steps" value="3" min="1" max="10" placeholder="Steps">
-                                <button class="btn btn-primary" onclick="createNodeCircuit(2)">Create Node 2</button>
-                            </div>
-                            <div id="node2Circuit" class="circuit"></div>
-                        </div>
+                <!-- Active Node Circuit -->
+                <div class="node-circuit">
+                    <h3 id="node-circuit-title">Select a Node</h3>
+                    <div id="node-circuit-container">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 50px;">
+                            Add a node to start building circuits
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div class="network-result">
-                <h3>🌐 Combined Network Circuit</h3>
-                <button class="btn btn-success" onclick="runNetworkSimulation()">Run Network Simulation</button>
-                <div id="networkCircuit" class="circuit"></div>
-                <div class="chart-container">
-                    <canvas id="networkProbabilityChart"></canvas>
+            <!-- Entanglement Configuration -->
+            <div class="entanglement-config">
+                <h3 style="margin-bottom: 15px; color: var(--primary-color);">🔗 Entanglement Configuration</h3>
+                <div id="entanglement-pairs">
+                    <p style="color: var(--text-secondary);">Add at least 2 nodes to configure entanglements</p>
                 </div>
-                <div id="networkStateVector" class="state-vector"></div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="generateNetworkCircuit()">Generate Network Circuit</button>
+                    <button class="btn btn-success" onclick="runNetworkSimulation()">▶Run Network Simulation</button>
+                </div>
+            </div>
+
+            <!-- Network Results -->
+            <div id="network-results" class="results-panel" style="display: none;">
+                <h3 style="margin-bottom: 20px; color: var(--primary-color);">Network Simulation Results</h3>
+                <div id="network-circuit-display"></div>
+                <div id="network-state-display" class="state-vector"></div>
             </div>
         </div>
     </div>
 
+    <!-- Quantum Core Library -->
     <script>
-        // Global variables
-        var defaultDecimalPrecision = 3;
-        var precisionForApproximateComparison = 0.01;
-        var usingTextbookConvention = false;
-        var simulator = null;
+        // Global configuration
+        const defaultDecimalPrecision = 3;
+        const precisionForApproximateComparison = 0.01;
+        let usingTextbookConvention = false;
 
         // Utility classes
-        function Util() {}
-
-        Util.assert = function(condition, message) {
-            if (!condition) {
-                console.log("ASSERTION ERROR: " + message);
-                console.trace();
+        class Util {
+            static assert(condition, message) {
+                if (!condition) {
+                    console.error("ASSERTION ERROR: " + message);
+                    console.trace();
+                }
             }
-        };
 
-        Util.approximatelyEqual = function(a, b, tolerance) {
-            tolerance = tolerance || precisionForApproximateComparison;
-            var delta = Math.abs(a - b);
-            return delta <= tolerance;
-        };
-
-        function StringUtil() {}
-
-        StringUtil.numToString = function(x, decimalPrecision) {
-            decimalPrecision = decimalPrecision || defaultDecimalPrecision;
-            var s1 = x.toString();
-            var s2 = x.toFixed(decimalPrecision);
-            return s1.length < s2.length ? s1 : s2;
-        };
-
-        StringUtil.repeatString = function(s, n) {
-            var r = "";
-            for (var j = 0; j < n; j++) {
-                r += s;
+            static approximatelyEqual(a, b, tolerance = precisionForApproximateComparison) {
+                return Math.abs(a - b) <= tolerance;
             }
-            return r;
-        };
-
-        StringUtil.intToBinaryString = function(i, desiredWidth) {
-            var binaryString = i.toString(2);
-            return StringUtil.repeatString('0', desiredWidth - binaryString.length) + binaryString;
-        };
-
-        // Complex number class
-        function Complex(re, im) {
-            this._r = re || 0;
-            this._i = im || 0;
         }
 
-        Complex.prototype.toString = function(decimalPrecision) {
-            if (this._r === 0) {
-                if (this._i === 0) {
-                    return "0";
+        class StringUtil {
+            static numToString(x, decimalPrecision = defaultDecimalPrecision) {
+                const s1 = x.toString();
+                const s2 = x.toFixed(decimalPrecision);
+                return s1.length < s2.length ? s1 : s2;
+            }
+
+            static repeatString(s, n) {
+                return s.repeat(n);
+            }
+
+            static intToBinaryString(i, desiredWidth) {
+                const binaryString = i.toString(2);
+                return StringUtil.repeatString('0', desiredWidth - binaryString.length) + binaryString;
+            }
+        }
+
+        // Complex number class
+        class Complex {
+            constructor(re = 0, im = 0) {
+                this._r = re;
+                this._i = im;
+            }
+
+            toString(decimalPrecision = defaultDecimalPrecision) {
+                if (this._r === 0) {
+                    if (this._i === 0) {
+                        return "0";
+                    } else {
+                        return StringUtil.numToString(this._i, decimalPrecision) + "i";
+                    }
                 } else {
-                    return StringUtil.numToString(this._i, decimalPrecision) + "i";
-                }
-            } else {
-                if (this._i === 0) {
-                    return StringUtil.numToString(this._r, decimalPrecision);
-                } else {
-                    var rs = StringUtil.numToString(this._r, decimalPrecision);
-                    var is = StringUtil.numToString(this._i, decimalPrecision) + "i";
-                    return is[0] === '-' ? (rs + is) : (rs + "+" + is);
+                    if (this._i === 0) {
+                        return StringUtil.numToString(this._r, decimalPrecision);
+                    } else {
+                        const rs = StringUtil.numToString(this._r, decimalPrecision);
+                        const is = StringUtil.numToString(this._i, decimalPrecision) + "i";
+                        return is[0] === '-' ? (rs + is) : (rs + "+" + is);
+                    }
                 }
             }
-        };
 
-        Complex.prototype.copy = function() {
-            return new Complex(this._r, this._i);
-        };
-
-        Complex.prototype.conjugate = function() {
-            return new Complex(this._r, -this._i);
-        };
-
-        Complex.prototype.mag = function() {
-            return Math.sqrt(this._r * this._r + this._i * this._i);
-        };
-
-        Complex.prototype.magSquared = function() {
-            return this._r * this._r + this._i * this._i;
-        };
-
-        Complex.sum = function(c1, c2) {
-            return new Complex(c1._r + c2._r, c1._i + c2._i);
-        };
-
-        Complex.mult = function(c1, c2) {
-            if (c1 instanceof Complex) {
-                if (c2 instanceof Complex) {
-                    return new Complex(c1._r * c2._r - c1._i * c2._i, c1._r * c2._i + c1._i * c2._r);
-                }
-                return new Complex(c1._r * c2, c1._i * c2);
-            } else if (c2 instanceof Complex) {
-                return new Complex(c1 * c2._r, c1 * c2._i);
+            copy() {
+                return new Complex(this._r, this._i);
             }
-            return c1 * c2;
-        };
+
+            conjugate() {
+                return new Complex(this._r, -this._i);
+            }
+
+            mag() {
+                return Math.sqrt(this._r * this._r + this._i * this._i);
+            }
+
+            magSquared() {
+                return this._r * this._r + this._i * this._i;
+            }
+
+            static sum(c1, c2) {
+                return new Complex(c1._r + c2._r, c1._i + c2._i);
+            }
+
+            static mult(c1, c2) {
+                if (c1 instanceof Complex) {
+                    if (c2 instanceof Complex) {
+                        return new Complex(c1._r * c2._r - c1._i * c2._i, c1._r * c2._i + c1._i * c2._r);
+                    }
+                    return new Complex(c1._r * c2, c1._i * c2);
+                } else if (c2 instanceof Complex) {
+                    return new Complex(c1 * c2._r, c1 * c2._i);
+                }
+                return c1 * c2;
+            }
+        }
 
         Complex.i = new Complex(0, 1);
 
         // Matrix class
-        function CMatrix(numRows, numCols) {
-            this._rows = numRows;
-            this._cols = numCols;
-            this._m = new Float32Array(numRows * numCols * 2);
-        }
-
-        CMatrix.prototype.get = function(row, col) {
-            var j = (row * this._cols + col) * 2;
-            return new Complex(this._m[j], this._m[j + 1]);
-        };
-
-        CMatrix.prototype.set = function(row, col, value) {
-            var j = (row * this._cols + col) * 2;
-            if (typeof value === 'number') {
-                this._m[j] = value;
-                this._m[j + 1] = 0;
-            } else if (value instanceof Complex) {
-                this._m[j] = value._r;
-                this._m[j + 1] = value._i;
-            }
-        };
-
-        CMatrix.prototype.copy = function() {
-            var M = new CMatrix(this._rows, this._cols);
-            for (var i = 0; i < this._m.length; i++) {
-                M._m[i] = this._m[i];
-            }
-            return M;
-        };
-
-        CMatrix.mult = function(a, b) {
-            if (!(a instanceof CMatrix)) {
-                var tmp = b;
-                b = a;
-                a = tmp;
+        class CMatrix {
+            constructor(numRows, numCols) {
+                this._rows = numRows;
+                this._cols = numCols;
+                this._m = new Float32Array(numRows * numCols * 2);
             }
 
-            if (typeof b === 'number') {
-                var M = a.copy();
-                for (var j = M._m.length - 1; j >= 0; j--) {
-                    M._m[j] *= b;
+            get(row, col) {
+                const j = (row * this._cols + col) * 2;
+                return new Complex(this._m[j], this._m[j + 1]);
+            }
+
+            set(row, col, value) {
+                const j = (row * this._cols + col) * 2;
+                if (typeof value === 'number') {
+                    this._m[j] = value;
+                    this._m[j + 1] = 0;
+                } else if (value instanceof Complex) {
+                    this._m[j] = value._r;
+                    this._m[j + 1] = value._i;
+                }
+            }
+
+            copy() {
+                const M = new CMatrix(this._rows, this._cols);
+                for (let i = 0; i < this._m.length; i++) {
+                    M._m[i] = this._m[i];
                 }
                 return M;
-            } else if (b instanceof CMatrix) {
-                var M = new CMatrix(a._rows, b._cols);
-                for (var r = 0; r < M._rows; r++) {
-                    for (var c = 0; c < M._cols; c++) {
-                        var dotProduct = new Complex();
-                        for (var k = 0; k < a._cols; k++) {
-                            dotProduct = Complex.sum(dotProduct, Complex.mult(a.get(r, k), b.get(k, c)));
+            }
+
+            static mult(a, b) {
+                if (!(a instanceof CMatrix)) {
+                    const tmp = b;
+                    b = a;
+                    a = tmp;
+                }
+
+                if (typeof b === 'number') {
+                    const M = a.copy();
+                    for (let j = M._m.length - 1; j >= 0; j--) {
+                        M._m[j] *= b;
+                    }
+                    return M;
+                } else if (b instanceof CMatrix) {
+                    const M = new CMatrix(a._rows, b._cols);
+                    for (let r = 0; r < M._rows; r++) {
+                        for (let c = 0; c < M._cols; c++) {
+                            let dotProduct = new Complex();
+                            for (let k = 0; k < a._cols; k++) {
+                                dotProduct = Complex.sum(dotProduct, Complex.mult(a.get(r, k), b.get(k, c)));
+                            }
+                            M.set(r, c, dotProduct);
                         }
-                        M.set(r, c, dotProduct);
+                    }
+                    return M;
+                }
+            }
+
+            static create(arrayOfArrays) {
+                const numRows = arrayOfArrays.length;
+                const numCols = arrayOfArrays[0].length;
+                const M = new CMatrix(numRows, numCols);
+                for (let j = 0; j < numRows; j++) {
+                    for (let k = 0; k < numCols; k++) {
+                        M.set(j, k, arrayOfArrays[j][k]);
                     }
                 }
                 return M;
             }
-        };
 
-        CMatrix.create = function(arrayOfArrays) {
-            var numRows = arrayOfArrays.length;
-            var numCols = arrayOfArrays[0].length;
-            var M = new CMatrix(numRows, numCols);
-            for (var j = 0; j < numRows; j++) {
-                for (var k = 0; k < numCols; k++) {
-                    M.set(j, k, arrayOfArrays[j][k]);
+            static createColVector(array) {
+                return CMatrix.create(array.map(x => [x]));
+            }
+
+            static identity(numRows) {
+                const M = new CMatrix(numRows, numRows);
+                for (let k = 0; k < numRows; k++) {
+                    M.set(k, k, 1);
                 }
+                return M;
             }
-            return M;
-        };
-
-        CMatrix.createColVector = function(array) {
-            return CMatrix.create(array.map(function(x) { return [x]; }));
-        };
-
-        CMatrix.identity = function(numRows) {
-            var M = new CMatrix(numRows, numRows);
-            for (var k = 0; k < numRows; k++) {
-                M.set(k, k, 1);
-            }
-            return M;
-        };
+        }
 
         // Simulation class
-        function Sim() {}
-
-        Sim.qubitWiseMultiply = function(U, i_w, n, stateVector, listOfControlBits) {
-            listOfControlBits = listOfControlBits || [];
-            var sizeOfStateVector = 1 << n;
-            
-            var inclusionMask = 0;
-            var desiredValueMask = 0;
-            for (var i = 0; i < listOfControlBits.length; i++) {
-                var wireIndex = listOfControlBits[i][0];
-                var flag = listOfControlBits[i][1];
-                var bit = 1 << wireIndex;
-                inclusionMask |= bit;
-                if (flag) {
-                    desiredValueMask |= bit;
-                }
-            }
-
-            var tempVector = new CMatrix(2, 1);
-            var sizeOfHalfBlock = 1 << i_w;
-            var sizeOfBlock = sizeOfHalfBlock << 1;
-            var result = stateVector.copy();
-            
-            for (var indexOfStartOfBlock = 0; indexOfStartOfBlock < sizeOfStateVector; indexOfStartOfBlock += sizeOfBlock) {
-                for (var offsetWithinBlock = 0; offsetWithinBlock < sizeOfHalfBlock; offsetWithinBlock++) {
-                    var i1 = indexOfStartOfBlock | offsetWithinBlock;
-                    if ((i1 & inclusionMask) !== desiredValueMask) {
-                        continue;
+        class Sim {
+            static qubitWiseMultiply(U, i_w, n, stateVector, listOfControlBits = []) {
+                const sizeOfStateVector = 1 << n;
+                
+                let inclusionMask = 0;
+                let desiredValueMask = 0;
+                for (let i = 0; i < listOfControlBits.length; i++) {
+                    const wireIndex = listOfControlBits[i][0];
+                    const flag = listOfControlBits[i][1];
+                    const bit = 1 << wireIndex;
+                    inclusionMask |= bit;
+                    if (flag) {
+                        desiredValueMask |= bit;
                     }
-
-                    var i2 = i1 | sizeOfHalfBlock;
-
-                    tempVector.set(0, 0, stateVector.get(i1, 0));
-                    tempVector.set(1, 0, stateVector.get(i2, 0));
-
-                    var transformedVector = CMatrix.mult(U, tempVector);
-
-                    result.set(i1, 0, transformedVector.get(0, 0));
-                    result.set(i2, 0, transformedVector.get(1, 0));
                 }
+
+                const tempVector = new CMatrix(2, 1);
+                const sizeOfHalfBlock = 1 << i_w;
+                const sizeOfBlock = sizeOfHalfBlock << 1;
+                const result = stateVector.copy();
+                
+                for (let indexOfStartOfBlock = 0; indexOfStartOfBlock < sizeOfStateVector; indexOfStartOfBlock += sizeOfBlock) {
+                    for (let offsetWithinBlock = 0; offsetWithinBlock < sizeOfHalfBlock; offsetWithinBlock++) {
+                        const i1 = indexOfStartOfBlock | offsetWithinBlock;
+                        if ((i1 & inclusionMask) !== desiredValueMask) {
+                            continue;
+                        }
+
+                        const i2 = i1 | sizeOfHalfBlock;
+
+                        tempVector.set(0, 0, stateVector.get(i1, 0));
+                        tempVector.set(1, 0, stateVector.get(i2, 0));
+
+                        const transformedVector = CMatrix.mult(U, tempVector);
+
+                        result.set(i1, 0, transformedVector.get(0, 0));
+                        result.set(i2, 0, transformedVector.get(1, 0));
+                    }
+                }
+                return result;
             }
-            return result;
-        };
 
-        Sim.init = function() {
-            Sim.ketZero = CMatrix.createColVector([1, 0]);
-            Sim.ketOne = CMatrix.createColVector([0, 1]);
-            Sim.ketPlus = CMatrix.createColVector([Math.SQRT1_2, Math.SQRT1_2]);
-            Sim.ketMinus = CMatrix.createColVector([Math.SQRT1_2, -Math.SQRT1_2]);
+            static init() {
+                Sim.ketZero = CMatrix.createColVector([1, 0]);
+                Sim.ketOne = CMatrix.createColVector([0, 1]);
+                Sim.ketPlus = CMatrix.createColVector([Math.SQRT1_2, Math.SQRT1_2]);
+                Sim.ketMinus = CMatrix.createColVector([Math.SQRT1_2, -Math.SQRT1_2]);
 
-            Sim.I = CMatrix.identity(2);
-            Sim.H = CMatrix.mult(CMatrix.create([[1, 1], [1, -1]]), Math.SQRT1_2);
-            Sim.X = CMatrix.create([[0, 1], [1, 0]]);
-            Sim.Y = CMatrix.create([[new Complex(0, 0), new Complex(0, -1)], [new Complex(0, 1), new Complex(0, 0)]]);
-            Sim.Z = CMatrix.create([[1, 0], [0, -1]]);
+                // Single-qubit gates
+                Sim.I = CMatrix.identity(2);
+                Sim.H = CMatrix.mult(CMatrix.create([[1, 1], [1, -1]]), Math.SQRT1_2);
+                Sim.X = CMatrix.create([[0, 1], [1, 0]]);
+                Sim.Y = CMatrix.create([[new Complex(0, 0), new Complex(0, -1)], [new Complex(0, 1), new Complex(0, 0)]]);
+                Sim.Z = CMatrix.create([[1, 0], [0, -1]]);
+                
+                // Phase gates
+                Sim.S = CMatrix.create([[1, 0], [0, new Complex(0, 1)]]);
+                Sim.T = CMatrix.create([[1, 0], [0, new Complex(Math.SQRT1_2, Math.SQRT1_2)]]);
+                Sim.Sdg = CMatrix.create([[1, 0], [0, new Complex(0, -1)]]); // S†
 
-            Sim.SX = CMatrix.mult(
-                CMatrix.create([[new Complex(1, 1), new Complex(1, -1)], [new Complex(1, -1), new Complex(1, 1)]]),
-                0.5
-            );
-            Sim.SY = CMatrix.mult(
-                CMatrix.create([[new Complex(1, 1), new Complex(-1, -1)], [new Complex(1, 1), new Complex(1, 1)]]),
-                0.5
-            );
-            Sim.SZ = CMatrix.create(
-                [[new Complex(1, 0), new Complex(0, 0)], [new Complex(0, 0), new Complex(0, 1)]]
-            );
+                // Root gates
+                Sim.SX = CMatrix.mult(
+                    CMatrix.create([[new Complex(1, 1), new Complex(1, -1)], [new Complex(1, -1), new Complex(1, 1)]]),
+                    0.5
+                );
+                Sim.SY = CMatrix.mult(
+                    CMatrix.create([[new Complex(1, 1), new Complex(-1, -1)], [new Complex(1, 1), new Complex(1, 1)]]),
+                    0.5
+                );
 
-            Sim.RX_90deg = CMatrix.create([[new Complex(Math.SQRT1_2, 0), new Complex(0, -Math.SQRT1_2)], [new Complex(0, -Math.SQRT1_2), new Complex(Math.SQRT1_2, 0)]]);
-            Sim.RY_90deg = CMatrix.create([[new Complex(Math.SQRT1_2, 0), new Complex(-Math.SQRT1_2, 0)], [new Complex(Math.SQRT1_2, 0), new Complex(Math.SQRT1_2, 0)]]);
-            Sim.RZ_90deg = CMatrix.create([[new Complex(Math.SQRT1_2, -Math.SQRT1_2), new Complex(0, 0)], [new Complex(0, 0), new Complex(Math.SQRT1_2, Math.SQRT1_2)]]);
-        };
+                // Rotation gates (π/2 rotations)
+                Sim.RX = CMatrix.create([[new Complex(Math.SQRT1_2, 0), new Complex(0, -Math.SQRT1_2)], [new Complex(0, -Math.SQRT1_2), new Complex(Math.SQRT1_2, 0)]]);
+                Sim.RY = CMatrix.create([[new Complex(Math.SQRT1_2, 0), new Complex(-Math.SQRT1_2, 0)], [new Complex(Math.SQRT1_2, 0), new Complex(Math.SQRT1_2, 0)]]);
+                Sim.RZ = CMatrix.create([[new Complex(Math.SQRT1_2, -Math.SQRT1_2), new Complex(0, 0)], [new Complex(0, 0), new Complex(Math.SQRT1_2, Math.SQRT1_2)]]);
+            }
 
-        // Quantum Simulator class
-        function QuantumSimulator() {
-            this.circuit = [];
-            this.numQubits = 3;
-            this.numSteps = 5;
-            this.nodeCircuits = { 1: [], 2: [] };
-            this.entanglements = [];
-            this.networkCircuit = [];
+            static getGateMatrix(gateName) {
+                const gates = {
+                    'I': Sim.I,
+                    'H': Sim.H,
+                    'X': Sim.X,
+                    'Y': Sim.Y,
+                    'Z': Sim.Z,
+                    'S': Sim.S,
+                    'T': Sim.T,
+                    'Sdg': Sim.Sdg,
+                    'SX': Sim.SX,
+                    'SY': Sim.SY,
+                    'RX': Sim.RX,
+                    'RY': Sim.RY,
+                    'RZ': Sim.RZ
+                };
+                return gates[gateName] || null;
+            }
         }
 
-        QuantumSimulator.prototype.setupDragAndDrop = function() {
-            var gates = document.querySelectorAll('.gate');
-            for (var i = 0; i < gates.length; i++) {
-                gates[i].addEventListener('dragstart', function(e) {
-                    var gateType = e.target.getAttribute('data-gate');
-                    e.dataTransfer.setData('text/plain', gateType);
-                    e.dataTransfer.effectAllowed = 'copy';
+        // Initialize Sim
+        Sim.init();
+
+        // Circuit Component Class
+        class CircuitComponent {
+            constructor(containerId, options = {}) {
+                this.containerId = containerId;
+                this.options = {
+                    qubits: 3,
+                    steps: 8,
+                    showControls: true,
+                    title: 'Quantum Circuit',
+                    ...options
+                };
+                this.circuit = this.createEmptyCircuit();
+                this.render();
+                this.setupEventHandlers();
+            }
+
+            createEmptyCircuit() {
+                const circuit = {
+                    qubits: this.options.qubits,
+                    steps: this.options.steps,
+                    gates: [],
+                    metadata: {
+                        title: this.options.title,
+                        created: new Date().toISOString(),
+                        version: "1.0"
+                    }
+                };
+                return circuit;
+            }
+
+            render() {
+                const container = document.getElementById(this.containerId);
+                container.innerHTML = `
+                    ${this.renderGatePalette()}
+                    ${this.renderCircuitArea()}
+                `;
+                this.renderCircuitCanvas();
+            }
+
+            renderGatePalette() {
+                return `
+                    <div class="gate-palette">
+                        <h3>Gate Palette</h3>
+                        
+                        <div class="gate-category">
+                            <h4>Pauli Gates</h4>
+                            <div class="gate-grid">
+                                <div class="gate-item">
+                                    <div class="gate-button pauli" draggable="true" data-gate="I">I</div>
+                                    <div class="gate-label">Identity</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button pauli" draggable="true" data-gate="X">X</div>
+                                    <div class="gate-label">Pauli-X</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button pauli" draggable="true" data-gate="Y">Y</div>
+                                    <div class="gate-label">Pauli-Y</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button pauli" draggable="true" data-gate="Z">Z</div>
+                                    <div class="gate-label">Pauli-Z</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gate-category">
+                            <h4>Hadamard & Phase</h4>
+                            <div class="gate-grid">
+                                <div class="gate-item">
+                                    <div class="gate-button hadamard" draggable="true" data-gate="H">H</div>
+                                    <div class="gate-label">Hadamard</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button phase" draggable="true" data-gate="S">S</div>
+                                    <div class="gate-label">S Gate</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button phase" draggable="true" data-gate="T">T</div>
+                                    <div class="gate-label">T Gate</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button phase" draggable="true" data-gate="Sdg">S†</div>
+                                    <div class="gate-label">S Dagger</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gate-category">
+                            <h4>Rotation Gates</h4>
+                            <div class="gate-grid">
+                                <div class="gate-item">
+                                    <div class="gate-button rotation" draggable="true" data-gate="RX">RX</div>
+                                    <div class="gate-label">X-Rotation</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button rotation" draggable="true" data-gate="RY">RY</div>
+                                    <div class="gate-label">Y-Rotation</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button rotation" draggable="true" data-gate="RZ">RZ</div>
+                                    <div class="gate-label">Z-Rotation</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gate-category">
+                            <h4>Multi-Qubit Gates</h4>
+                            <div class="gate-grid">
+                                <div class="gate-item">
+                                    <div class="gate-button control" draggable="true" data-gate="CNOT">●-⊕</div>
+                                    <div class="gate-label">CNOT</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button control" draggable="true" data-gate="CZ">CZ</div>
+                                    <div class="gate-label">Controlled-Z</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button control" draggable="true" data-gate="SWAP">⤬-⤬</div>
+                                    <div class="gate-label">SWAP</div>
+                                </div>
+                                <div class="gate-item">
+                                    <div class="gate-button control" draggable="true" data-gate="TOFFOLI">●-●-⊕</div>
+                                    <div class="gate-label">Toffoli</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderCircuitArea() {
+                return `
+                    <div class="circuit-area">
+                        ${this.options.showControls ? this.renderControls() : ''}
+                        <div class="circuit-canvas" id="${this.containerId}-canvas">
+                            <!-- Circuit will be rendered here -->
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderControls() {
+                return `
+                    <div class="circuit-controls">
+                        <div class="control-group">
+                            <label>Qubits:</label>
+                            <input type="number" id="${this.containerId}-qubits" value="${this.circuit.qubits}" min="1" max="8">
+                        </div>
+                        <div class="control-group">
+                            <label>Steps:</label>
+                            <input type="number" id="${this.containerId}-steps" value="${this.circuit.steps}" min="1" max="20">
+                        </div>
+                        <button class="btn btn-primary" onclick="window.circuitComponents['${this.containerId}'].updateDimensions()">
+                            Update
+                        </button>
+                        <button class="btn btn-success" onclick="window.circuitComponents['${this.containerId}'].simulate()">
+                            Simulate
+                        </button>
+                        <button class="btn btn-warning" onclick="window.circuitComponents['${this.containerId}'].clear()">
+                            Clear
+                        </button>
+                    </div>
+                `;
+            }
+
+            renderCircuitCanvas() {
+                const canvas = document.getElementById(`${this.containerId}-canvas`);
+                canvas.innerHTML = '';
+
+                // Create qubit lines
+                for (let qubit = 0; qubit < this.circuit.qubits; qubit++) {
+                    const qubitLine = document.createElement('div');
+                    qubitLine.className = 'qubit-line';
+                    qubitLine.innerHTML = `
+                        <div class="qubit-label">q${qubit}</div>
+                        <div class="qubit-wire" id="wire-${qubit}">
+                            ${this.renderGateSlots(qubit)}
+                        </div>
+                    `;
+                    canvas.appendChild(qubitLine);
+                }
+
+                // Render existing gates
+                this.renderGates();
+            }
+
+            renderGateSlots(qubit) {
+                let slots = '';
+                for (let step = 0; step < this.circuit.steps; step++) {
+                    const gate = this.findGateAt(qubit, step);
+                    const slotClass = gate ? 'gate-slot occupied' : 'gate-slot';
+                    const content = gate ? this.getGateDisplayText(gate, qubit) : '';
+                    
+                    slots += `
+                        <div class="${slotClass}" 
+                             data-qubit="${qubit}" 
+                             data-step="${step}"
+                             onclick="window.circuitComponents['${this.containerId}'].removeGate(${qubit}, ${step})">
+                            ${content}
+                        </div>
+                    `;
+                }
+                return slots;
+            }
+
+            findGateAt(qubit, step) {
+                return this.circuit.gates.find(gate => 
+                    gate.step === step && (
+                        gate.qubit === qubit || 
+                        (gate.targetQubits && gate.targetQubits.includes(qubit)) ||
+                        (gate.controlQubits && gate.controlQubits.includes(qubit)) ||
+                        gate.targetQubit === qubit ||
+                        gate.controlQubit === qubit
+                    )
+                );
+            }
+
+            getGateDisplayText(gate, currentQubit) {
+                if (gate.type === 'CNOT') {
+                    if (currentQubit === gate.controlQubit) return '●';
+                    if (gate.targetQubits && gate.targetQubits.includes(currentQubit)) return '⊕';
+                } else if (gate.type === 'CZ') {
+                    if (currentQubit === gate.controlQubit) return '●';
+                    if (gate.targetQubits && gate.targetQubits.includes(currentQubit)) return 'Z';
+                } else if (gate.type === 'SWAP') {
+                    return '⤬';
+                } else if (gate.type === 'TOFFOLI') {
+                    if (gate.controlQubits && gate.controlQubits.includes(currentQubit)) return '●';
+                    if (currentQubit === gate.targetQubit) return '⊕';
+                }
+                return gate.type;
+            }
+
+            setupEventHandlers() {
+                // Setup drag and drop
+                const container = document.getElementById(this.containerId);
+                
+                // Drag start for gates
+                container.addEventListener('dragstart', (e) => {
+                    if (e.target.classList.contains('gate-button')) {
+                        e.dataTransfer.setData('text/plain', e.target.dataset.gate);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    }
+                });
+
+                // Drop handling
+                container.addEventListener('dragover', (e) => {
+                    if (e.target.classList.contains('gate-slot')) {
+                        e.preventDefault();
+                        e.target.classList.add('drag-over');
+                    }
+                });
+
+                container.addEventListener('dragleave', (e) => {
+                    if (e.target.classList.contains('gate-slot')) {
+                        e.target.classList.remove('drag-over');
+                    }
+                });
+
+                container.addEventListener('drop', (e) => {
+                    if (e.target.classList.contains('gate-slot')) {
+                        e.preventDefault();
+                        e.target.classList.remove('drag-over');
+                        
+                        const gateType = e.dataTransfer.getData('text/plain');
+                        const qubit = parseInt(e.target.dataset.qubit);
+                        const step = parseInt(e.target.dataset.step);
+                        
+                        this.addGate(gateType, qubit, step);
+                    }
                 });
             }
-        };
 
-        QuantumSimulator.prototype.createCircuit = function() {
-            try {
-                var numQubitsInput = document.getElementById('numQubits');
-                var numStepsInput = document.getElementById('numSteps');
-                
-                if (!numQubitsInput || !numStepsInput) {
-                    console.error('Input elements not found');
-                    return;
-                }
-                
-                this.numQubits = parseInt(numQubitsInput.value) || 3;
-                this.numSteps = parseInt(numStepsInput.value) || 5;
-                
-                if (this.numQubits < 1 || this.numQubits > 8) {
-                    this.showError('Number of qubits must be between 1 and 8');
-                    return;
+            addGate(type, qubit, step) {
+                // Remove any existing gate at this position
+                this.removeGateAt(qubit, step);
+
+                if (type === 'CNOT') {
+                    const targetQubit = this.promptForTarget('CNOT target qubit', qubit);
+                    if (targetQubit !== null) {
+                        this.circuit.gates.push({
+                            type: 'CNOT',
+                            qubit: qubit,
+                            step: step,
+                            controlQubit: qubit,
+                            targetQubits: [targetQubit]
+                        });
+                    }
+                } else if (type === 'CZ') {
+                    const targetQubit = this.promptForTarget('Controlled-Z target qubit', qubit);
+                    if (targetQubit !== null) {
+                        this.circuit.gates.push({
+                            type: 'CZ',
+                            qubit: qubit,
+                            step: step,
+                            controlQubit: qubit,
+                            targetQubits: [targetQubit]
+                        });
+                    }
+                } else if (type === 'SWAP') {
+                    const targetQubit = this.promptForTarget('SWAP target qubit', qubit);
+                    if (targetQubit !== null) {
+                        this.circuit.gates.push({
+                            type: 'SWAP',
+                            qubit: qubit,
+                            step: step,
+                            targetQubits: [targetQubit]
+                        });
+                    }
+                } else if (type === 'TOFFOLI') {
+                    const control1 = this.promptForTarget('First control qubit', qubit);
+                    if (control1 !== null) {
+                        const control2 = this.promptForTarget('Second control qubit', qubit, [control1]);
+                        if (control2 !== null) {
+                            this.circuit.gates.push({
+                                type: 'TOFFOLI',
+                                qubit: qubit,
+                                step: step,
+                                controlQubits: [control1, control2],
+                                targetQubit: qubit
+                            });
+                        }
+                    }
+                } else {
+                    // Single-qubit gate
+                    this.circuit.gates.push({
+                        type: type,
+                        qubit: qubit,
+                        step: step
+                    });
                 }
 
-                this.circuit = [];
-                for (var i = 0; i < this.numQubits; i++) {
-                    this.circuit[i] = [];
-                    for (var j = 0; j < this.numSteps; j++) {
-                        this.circuit[i][j] = null;
+                this.renderCircuitCanvas();
+                this.updateJSON();
+            }
+
+            promptForTarget(message, currentQubit, excluded = []) {
+                const validQubits = [];
+                for (let i = 0; i < this.circuit.qubits; i++) {
+                    if (i !== currentQubit && !excluded.includes(i)) {
+                        validQubits.push(i);
                     }
                 }
-                
-                this.renderCircuit('circuit', this.circuit, this.numQubits, this.numSteps);
-                
-                var self = this;
-                setTimeout(function() {
-                    self.setupDragAndDrop();
-                }, 100);
-                
-            } catch (error) {
-                console.error('Error in createCircuit:', error);
-                this.showError('Failed to create circuit: ' + error.message);
-            }
-        };
 
-        QuantumSimulator.prototype.createNodeCircuit = function(nodeNum) {
-            var qubitsId = 'node' + nodeNum + 'Qubits';
-            var stepsId = 'node' + nodeNum + 'Steps';
-            var circuitId = 'node' + nodeNum + 'Circuit';
-            
-            var numQubits = parseInt(document.getElementById(qubitsId).value) || 2;
-            var numSteps = parseInt(document.getElementById(stepsId).value) || 3;
-            
-            if (numQubits < 1 || numQubits > 4) {
-                this.showError('Node ' + nodeNum + ': Number of qubits must be between 1 and 4');
-                return;
-            }
+                if (validQubits.length === 0) {
+                    showNotification('No valid target qubits available', 'error');
+                    return null;
+                }
 
-            this.nodeCircuits[nodeNum] = [];
-            for (var i = 0; i < numQubits; i++) {
-                this.nodeCircuits[nodeNum][i] = [];
-                for (var j = 0; j < numSteps; j++) {
-                    this.nodeCircuits[nodeNum][i][j] = null;
+                const target = prompt(`${message} (${validQubits.join(', ')}):`);
+                if (target === null) return null;
+
+                const targetNum = parseInt(target);
+                if (validQubits.includes(targetNum)) {
+                    return targetNum;
+                } else {
+                    showNotification('Invalid target qubit', 'error');
+                    return null;
                 }
             }
-            
-            this.renderCircuit(circuitId, this.nodeCircuits[nodeNum], numQubits, numSteps, nodeNum);
-            this.updateEntanglementControls();
-            
-            var self = this;
-            setTimeout(function() {
-                self.setupDragAndDrop();
-            }, 100);
-        };
 
-        QuantumSimulator.prototype.renderCircuit = function(containerId, circuit, numQubits, numSteps, nodeNum) {
-            var container = document.getElementById(containerId);
-            if (!container) {
-                console.error('Container ' + containerId + ' not found');
-                return;
+            removeGateAt(qubit, step) {
+                this.circuit.gates = this.circuit.gates.filter(gate => 
+                    !(gate.step === step && (
+                        gate.qubit === qubit || 
+                        (gate.targetQubits && gate.targetQubits.includes(qubit)) ||
+                        (gate.controlQubits && gate.controlQubits.includes(qubit)) ||
+                        gate.targetQubit === qubit
+                    ))
+                );
             }
-            container.innerHTML = '';
 
-            for (var qubit = 0; qubit < numQubits; qubit++) {
-                var qubitLine = document.createElement('div');
-                qubitLine.className = 'qubit-line';
+            removeGate(qubit, step) {
+                this.removeGateAt(qubit, step);
+                this.renderCircuitCanvas();
+                this.updateJSON();
+            }
 
-                var label = document.createElement('div');
-                label.className = 'qubit-label';
-                label.textContent = nodeNum ? 'N' + nodeNum + 'Q' + qubit : 'Q' + qubit;
-                qubitLine.appendChild(label);
-
-                var wire = document.createElement('div');
-                wire.className = 'qubit-wire';
+            renderGates() {
+                // Draw connection lines for multi-qubit gates
+                const canvas = document.getElementById(`${this.containerId}-canvas`);
                 
-                for (var step = 0; step < numSteps; step++) {
-                    var slot = document.createElement('div');
-                    slot.className = 'gate-slot';
-                    slot.setAttribute('data-qubit', qubit);
-                    slot.setAttribute('data-step', step);
-                    slot.setAttribute('data-node', nodeNum || 'single');
+                // Remove existing connection lines
+                canvas.querySelectorAll('.connection-line').forEach(line => line.remove());
 
-                    if (circuit[qubit] && circuit[qubit][step]) {
-                        slot.textContent = circuit[qubit][step];
-                        slot.className += ' occupied';
+                this.circuit.gates.forEach(gate => {
+                    if (gate.type === 'CNOT' || gate.type === 'CZ') {
+                        this.drawConnectionLine(gate.controlQubit, gate.targetQubits[0], gate.step);
+                    } else if (gate.type === 'SWAP') {
+                        this.drawConnectionLine(gate.qubit, gate.targetQubits[0], gate.step);
+                    } else if (gate.type === 'TOFFOLI') {
+                        // Draw lines from both controls to target
+                        gate.controlQubits.forEach(control => {
+                            this.drawConnectionLine(control, gate.targetQubit, gate.step);
+                        });
                     }
-
-                    this.setupDropZone(slot, circuit);
-                    wire.appendChild(slot);
-                }
-
-                qubitLine.appendChild(wire);
-                container.appendChild(qubitLine);
-            }
-        };
-
-        QuantumSimulator.prototype.setupDropZone = function(slot, circuit) {
-            slot.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'copy';
-                slot.classList.add('drag-over');
-            });
-
-            slot.addEventListener('dragleave', function(e) {
-                if (!slot.contains(e.relatedTarget)) {
-                    slot.classList.remove('drag-over');
-                }
-            });
-
-            slot.addEventListener('drop', function(e) {
-                e.preventDefault();
-                slot.classList.remove('drag-over');
-                
-                var gateType = e.dataTransfer.getData('text/plain');
-                var qubit = parseInt(slot.getAttribute('data-qubit'));
-                var step = parseInt(slot.getAttribute('data-step'));
-                
-                if (gateType && circuit[qubit]) {
-                    circuit[qubit][step] = gateType;
-                    slot.textContent = gateType;
-                    slot.className = 'gate-slot occupied';
-                }
-            });
-
-            slot.addEventListener('click', function() {
-                if (slot.classList.contains('occupied')) {
-                    var qubit = parseInt(slot.getAttribute('data-qubit'));
-                    var step = parseInt(slot.getAttribute('data-step'));
-                    if (circuit[qubit]) {
-                        circuit[qubit][step] = null;
-                        slot.textContent = '';
-                        slot.className = 'gate-slot';
-                    }
-                }
-            });
-        };
-
-        QuantumSimulator.prototype.updateEntanglementControls = function() {
-            var container = document.getElementById('entanglementConfig');
-            if (!container) return;
-            
-            container.innerHTML = '';
-
-            var node1Qubits = this.nodeCircuits[1].length || 0;
-            var node2Qubits = this.nodeCircuits[2].length || 0;
-
-            if (node1Qubits === 0 || node2Qubits === 0) {
-                container.innerHTML = '<p>Create circuits for both nodes first</p>';
-                return;
-            }
-
-            container.innerHTML = '<p>Select qubit pairs to entangle:</p>';
-            
-            for (var i = 0; i < Math.min(node1Qubits, node2Qubits); i++) {
-                var entangleDiv = document.createElement('div');
-                entangleDiv.innerHTML = 
-                    '<label class="qubit-checkbox">' +
-                    '<input type="checkbox" data-node1-qubit="' + i + '" data-node2-qubit="' + i + '">' +
-                    'Entangle N1Q' + i + ' ↔ N2Q' + i +
-                    '</label>';
-                container.appendChild(entangleDiv);
-            }
-        };
-
-        QuantumSimulator.prototype.generateNetworkCircuit = function() {
-            var node1Qubits = this.nodeCircuits[1].length || 0;
-            var node2Qubits = this.nodeCircuits[2].length || 0;
-            
-            if (node1Qubits === 0 || node2Qubits === 0) {
-                this.showError('Create circuits for both nodes first');
-                return;
-            }
-
-            this.entanglements = [];
-            var checkboxes = document.querySelectorAll('#entanglementConfig input[type="checkbox"]:checked');
-            for (var i = 0; i < checkboxes.length; i++) {
-                this.entanglements.push({
-                    node1Qubit: parseInt(checkboxes[i].getAttribute('data-node1-qubit')),
-                    node2Qubit: parseInt(checkboxes[i].getAttribute('data-node2-qubit'))
                 });
             }
 
-            var totalQubits = node1Qubits + node2Qubits;
-            var maxSteps = Math.max(
-                this.nodeCircuits[1][0] ? this.nodeCircuits[1][0].length : 0,
-                this.nodeCircuits[2][0] ? this.nodeCircuits[2][0].length : 0
-            ) + 3;
-
-            this.networkCircuit = [];
-            for (var i = 0; i < totalQubits; i++) {
-                this.networkCircuit[i] = [];
-                for (var j = 0; j < maxSteps; j++) {
-                    this.networkCircuit[i][j] = null;
-                }
-            }
-
-            // Add entanglement gates
-            var entanglementStep = 0;
-            for (var i = 0; i < this.entanglements.length; i++) {
-                var ent = this.entanglements[i];
-                var node1QubitIndex = ent.node1Qubit;
-                var node2QubitIndex = node1Qubits + ent.node2Qubit;
+            drawConnectionLine(qubit1, qubit2, step) {
+                const canvas = document.getElementById(`${this.containerId}-canvas`);
+                const line = document.createElement('div');
+                line.className = 'connection-line';
                 
-                this.networkCircuit[node1QubitIndex][entanglementStep] = 'H';
-                this.networkCircuit[node1QubitIndex][entanglementStep + 1] = 'CNOT_CTRL';
-                this.networkCircuit[node2QubitIndex][entanglementStep + 1] = 'CNOT_TGT';
+                const minQubit = Math.min(qubit1, qubit2);
+                const maxQubit = Math.max(qubit1, qubit2);
+                const height = (maxQubit - minQubit) * 70; // 60px per qubit + 10px spacing
+                
+                line.style.left = `${109 + step * 65}px`; // Adjust based on layout
+                line.style.top = `${minQubit * 70 + 50}px`;
+                line.style.height = `${height}px`;
+                
+                canvas.appendChild(line);
             }
 
-            var nodeStepOffset = 2;
-            
-            // Apply node 1 circuit
-            for (var q = 0; q < node1Qubits; q++) {
-                for (var s = 0; s < this.nodeCircuits[1][q].length; s++) {
-                    if (this.nodeCircuits[1][q][s]) {
-                        this.networkCircuit[q][s + nodeStepOffset] = this.nodeCircuits[1][q][s];
+            updateDimensions() {
+                const qubitsInput = document.getElementById(`${this.containerId}-qubits`);
+                const stepsInput = document.getElementById(`${this.containerId}-steps`);
+                
+                if (qubitsInput && stepsInput) {
+                    const newQubits = parseInt(qubitsInput.value);
+                    const newSteps = parseInt(stepsInput.value);
+                    
+                    if (newQubits >= 1 && newQubits <= 8 && newSteps >= 1 && newSteps <= 20) {
+                        // Filter out gates that would be invalid with new dimensions
+                        this.circuit.gates = this.circuit.gates.filter(gate => 
+                            gate.qubit < newQubits && 
+                            gate.step < newSteps &&
+                            (!gate.targetQubits || gate.targetQubits.every(q => q < newQubits)) &&
+                            (!gate.controlQubits || gate.controlQubits.every(q => q < newQubits)) &&
+                            (!gate.targetQubit || gate.targetQubit < newQubits)
+                        );
+                        
+                        this.circuit.qubits = newQubits;
+                        this.circuit.steps = newSteps;
+                        this.renderCircuitCanvas();
+                        this.updateJSON();
+                        showNotification('Circuit dimensions updated', 'success');
+                    } else {
+                        showNotification('Invalid dimensions', 'error');
                     }
                 }
             }
 
-            // Apply node 2 circuit (reversed)
-            for (var q = 0; q < node2Qubits; q++) {
-                var reversedQubitIndex = node1Qubits + (node2Qubits - 1 - q);
-                for (var s = 0; s < this.nodeCircuits[2][q].length; s++) {
-                    if (this.nodeCircuits[2][q][s]) {
-                        this.networkCircuit[reversedQubitIndex][s + nodeStepOffset] = this.nodeCircuits[2][q][s];
+            clear() {
+                this.circuit.gates = [];
+                this.renderCircuitCanvas();
+                this.updateJSON();
+                showNotification('Circuit cleared', 'success');
+            }
+
+            simulate() {
+                try {
+                    const result = this.runSimulation();
+                    this.displayResults(result);
+                    showNotification('Simulation completed successfully', 'success');
+                } catch (error) {
+                    console.error('Simulation error:', error);
+                    showNotification('Simulation failed: ' + error.message, 'error');
+                }
+            }
+
+            runSimulation() {
+                // Initialize state vector
+                let stateVector = CMatrix.createColVector(new Array(1 << this.circuit.qubits).fill(0));
+                stateVector.set(0, 0, 1); // |00...0⟩ state
+
+                // Group gates by step
+                const gatesByStep = {};
+                this.circuit.gates.forEach(gate => {
+                    if (!gatesByStep[gate.step]) {
+                        gatesByStep[gate.step] = [];
                     }
-                }
-            }
+                    gatesByStep[gate.step].push(gate);
+                });
 
-            // Add final measurement Hadamards
-            var finalStep = maxSteps - 1;
-            for (var i = 0; i < this.entanglements.length; i++) {
-                var ent = this.entanglements[i];
-                var node1QubitIndex = ent.node1Qubit;
-                var node2QubitIndex = node1Qubits + ent.node2Qubit;
-                this.networkCircuit[node1QubitIndex][finalStep] = 'H';
-                this.networkCircuit[node2QubitIndex][finalStep] = 'H';
-            }
-
-            this.renderCircuit('networkCircuit', this.networkCircuit, totalQubits, maxSteps, 'network');
-            this.showSuccess('Network circuit generated successfully!');
-        };
-
-        QuantumSimulator.prototype.runSimulation = function() {
-            if (this.circuit.length === 0) {
-                this.showError('Create a circuit first');
-                return;
-            }
-
-            try {
-                console.log('Starting simulation...');
-                var result = this.simulateCircuit(this.circuit, this.numQubits);
-                console.log('Simulation completed, displaying results...');
-                this.displayResults(result, 'probabilityChart', 'stateVector');
-                this.showSuccess('Simulation completed successfully!');
-            } catch (error) {
-                console.error('Simulation error:', error);
-                this.showError('Simulation failed: ' + error.message);
-                
-                // Try to show just the state vector without chart
-                try {
-                    var result = this.simulateCircuit(this.circuit, this.numQubits);
-                    this.updateStateVector(result.stateVector, 'stateVector');
-                    this.showSuccess('Simulation completed (chart display failed, but state vector shown)');
-                } catch (fallbackError) {
-                    console.error('Fallback simulation also failed:', fallbackError);
-                }
-            }
-        };
-
-        QuantumSimulator.prototype.runNetworkSimulation = function() {
-            if (this.networkCircuit.length === 0) {
-                this.showError('Generate network circuit first');
-                return;
-            }
-
-            try {
-                console.log('Starting network simulation...');
-                var totalQubits = this.networkCircuit.length;
-                var result = this.simulateCircuit(this.networkCircuit, totalQubits);
-                console.log('Network simulation completed, displaying results...');
-                this.displayResults(result, 'networkProbabilityChart', 'networkStateVector');
-                this.showSuccess('Network simulation completed successfully!');
-            } catch (error) {
-                console.error('Network simulation error:', error);
-                this.showError('Network simulation failed: ' + error.message);
-                
-                // Try to show just the state vector without chart
-                try {
-                    var totalQubits = this.networkCircuit.length;
-                    var result = this.simulateCircuit(this.networkCircuit, totalQubits);
-                    this.updateStateVector(result.stateVector, 'networkStateVector');
-                    this.showSuccess('Network simulation completed (chart display failed, but state vector shown)');
-                } catch (fallbackError) {
-                    console.error('Fallback network simulation also failed:', fallbackError);
-                }
-            }
-        };
-
-        QuantumSimulator.prototype.simulateCircuit = function(circuit, numQubits) {
-            var stateVector = CMatrix.createColVector(new Array(1 << numQubits).fill(0));
-            stateVector.set(0, 0, 1);
-
-            var numSteps = circuit[0].length;
-
-            for (var step = 0; step < numSteps; step++) {
-                // Handle CNOT gates
-                var cnotPairs = [];
-                for (var qubit = 0; qubit < numQubits; qubit++) {
-                    if (circuit[qubit][step] === 'CNOT_CTRL' || circuit[qubit][step] === 'CNOT_CONTROL') {
-                        for (var target = 0; target < numQubits; target++) {
-                            if (circuit[target][step] === 'CNOT_TGT' || circuit[target][step] === 'CNOT_TARGET') {
-                                cnotPairs.push([qubit, target]);
-                                break;
+                // Apply gates step by step
+                for (let step = 0; step < this.circuit.steps; step++) {
+                    const gates = gatesByStep[step] || [];
+                    
+                    gates.forEach(gate => {
+                        if (gate.type === 'CNOT') {
+                            stateVector = Sim.qubitWiseMultiply(Sim.X, gate.targetQubits[0], this.circuit.qubits, stateVector, [[gate.controlQubit, true]]);
+                        } else if (gate.type === 'CZ') {
+                            stateVector = Sim.qubitWiseMultiply(Sim.Z, gate.targetQubits[0], this.circuit.qubits, stateVector, [[gate.controlQubit, true]]);
+                        } else if (gate.type === 'SWAP') {
+                            // SWAP = CNOT(q1,q2) + CNOT(q2,q1) + CNOT(q1,q2)
+                            const q1 = gate.qubit;
+                            const q2 = gate.targetQubits[0];
+                            stateVector = Sim.qubitWiseMultiply(Sim.X, q2, this.circuit.qubits, stateVector, [[q1, true]]);
+                            stateVector = Sim.qubitWiseMultiply(Sim.X, q1, this.circuit.qubits, stateVector, [[q2, true]]);
+                            stateVector = Sim.qubitWiseMultiply(Sim.X, q2, this.circuit.qubits, stateVector, [[q1, true]]);
+                        } else if (gate.type === 'TOFFOLI') {
+                            // CCNOT - apply X to target if both controls are |1⟩
+                            const controls = gate.controlQubits.map(q => [q, true]);
+                            stateVector = Sim.qubitWiseMultiply(Sim.X, gate.targetQubit, this.circuit.qubits, stateVector, controls);
+                        } else {
+                            // Single-qubit gate
+                            const gateMatrix = Sim.getGateMatrix(gate.type);
+                            if (gateMatrix) {
+                                stateVector = Sim.qubitWiseMultiply(gateMatrix, gate.qubit, this.circuit.qubits, stateVector);
                             }
                         }
+                    });
+                }
+
+                // Calculate probabilities
+                const probabilities = [];
+                for (let i = 0; i < stateVector._rows; i++) {
+                    const amplitude = stateVector.get(i, 0);
+                    probabilities.push(amplitude.magSquared());
+                }
+
+                return { stateVector, probabilities };
+            }
+
+            displayResults(result) {
+                this.displayStateVector(result.stateVector);
+                this.displayProbabilities(result.probabilities);
+                this.displayBlochSpheres(result.stateVector);
+            }
+
+            displayStateVector(stateVector) {
+                const display = document.getElementById('statevector-display');
+                if (!display) return;
+
+                let html = '<h4>State Vector Components:</h4>';
+                
+                for (let i = 0; i < stateVector._rows; i++) {
+                    const amplitude = stateVector.get(i, 0);
+                    const probability = amplitude.magSquared();
+                    
+                    if (probability > 0.001) {
+                        const binaryState = StringUtil.intToBinaryString(i, this.circuit.qubits);
+                        html += `<div style="margin: 5px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">`;
+                        html += `<strong>|${binaryState}⟩:</strong> ${amplitude.toString()} `;
+                        html += `<span style="color: #666;">(P = ${(probability * 100).toFixed(2)}%)</span>`;
+                        html += `</div>`;
+                    }
+                }
+                
+                display.innerHTML = html;
+            }
+
+            displayProbabilities(probabilities) {
+                const canvas = document.getElementById('probability-chart');
+                if (!canvas || typeof Chart === 'undefined') return;
+
+                // Destroy existing chart
+                if (window.probabilityChartInstance) {
+                    window.probabilityChartInstance.destroy();
+                }
+
+                const labels = [];
+                const data = [];
+                const backgroundColors = [];
+                
+                for (let i = 0; i < probabilities.length; i++) {
+                    if (probabilities[i] > 0.001) {
+                        const binaryState = StringUtil.intToBinaryString(i, this.circuit.qubits);
+                        labels.push(`|${binaryState}⟩`);
+                        data.push(probabilities[i]);
+                        backgroundColors.push(`hsl(${(i * 360) / probabilities.length}, 70%, 60%)`);
                     }
                 }
 
-                for (var i = 0; i < cnotPairs.length; i++) {
-                    var control = cnotPairs[i][0];
-                    var target = cnotPairs[i][1];
-                    stateVector = Sim.qubitWiseMultiply(Sim.X, target, numQubits, stateVector, [[control, true]]);
-                }
-
-                // Handle single-qubit gates
-                for (var qubit = 0; qubit < numQubits; qubit++) {
-                    var gate = circuit[qubit][step];
-                    if (gate && gate.indexOf('CNOT') === -1) {
-                        var gateMatrix = this.getGateMatrix(gate);
-                        if (gateMatrix) {
-                            stateVector = Sim.qubitWiseMultiply(gateMatrix, qubit, numQubits, stateVector);
-                        }
-                    }
-                }
-            }
-
-            var probabilities = [];
-            for (var i = 0; i < stateVector._rows; i++) {
-                var amplitude = stateVector.get(i, 0);
-                probabilities.push(amplitude.magSquared());
-            }
-
-            return { stateVector: stateVector, probabilities: probabilities };
-        };
-
-        QuantumSimulator.prototype.getGateMatrix = function(gateName) {
-            var gates = {
-                'H': Sim.H,
-                'X': Sim.X,
-                'Y': Sim.Y,
-                'Z': Sim.Z,
-                'SX': Sim.SX,
-                'SY': Sim.SY,
-                'SZ': Sim.SZ,
-                'RX90': Sim.RX_90deg,
-                'RY90': Sim.RY_90deg,
-                'RZ90': Sim.RZ_90deg
-            };
-            return gates[gateName] || null;
-        };
-
-        QuantumSimulator.prototype.displayResults = function(result, chartId, vectorId) {
-            this.updateProbabilityChart(result.probabilities, chartId);
-            this.updateStateVector(result.stateVector, vectorId);
-        };
-
-        QuantumSimulator.prototype.updateProbabilityChart = function(probabilities, chartId) {
-            var ctx = document.getElementById(chartId);
-            if (!ctx) return;
-
-            // Check if Chart.js is available
-            if (typeof Chart === 'undefined') {
-                console.warn('Chart.js not available, displaying text results instead');
-                this.displayTextChart(probabilities, chartId);
-                return;
-            }
-
-            if (window[chartId + '_instance']) {
-                window[chartId + '_instance'].destroy();
-            }
-
-            var numQubits = Math.log2(probabilities.length);
-            var labels = [];
-            var backgroundColors = [];
-            var borderColors = [];
-            
-            for (var i = 0; i < probabilities.length; i++) {
-                labels.push('|' + StringUtil.intToBinaryString(i, numQubits) + '⟩');
-                if (probabilities[i] > 0.01) {
-                    backgroundColors.push('rgba(54, 162, 235, 0.8)');
-                    borderColors.push('rgba(54, 162, 235, 1)');
-                } else {
-                    backgroundColors.push('rgba(201, 203, 207, 0.3)');
-                    borderColors.push('rgba(201, 203, 207, 0.8)');
-                }
-            }
-
-            try {
-                window[chartId + '_instance'] = new Chart(ctx, {
+                const ctx = canvas.getContext('2d');
+                window.probabilityChartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: labels,
                         datasets: [{
                             label: 'Probability',
-                            data: probabilities,
+                            data: data,
                             backgroundColor: backgroundColors,
-                            borderColor: borderColors,
-                            borderWidth: 1
+                            borderColor: backgroundColors.map(color => color.replace('60%', '40%')),
+                            borderWidth: 2,
+                            borderRadius: 4
                         }]
                     },
                     options: {
@@ -1178,6 +1534,802 @@
                             y: {
                                 beginAtZero: true,
                                 max: 1,
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value * 100).toFixed(0) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Probability: ${(context.parsed.y * 100).toFixed(2)}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            displayBlochSpheres(stateVector) {
+                const display = document.getElementById('bloch-display');
+                if (!display) return;
+
+                if (this.circuit.qubits === 1) {
+                    // Single qubit - show Bloch sphere
+                    const alpha = stateVector.get(0, 0);
+                    const beta = stateVector.get(1, 0);
+                    
+                    // Calculate Bloch coordinates
+                    const x = 2 * (alpha._r * beta._r + alpha._i * beta._i);
+                    const y = 2 * (beta._i * alpha._r - alpha._i * beta._r);
+                    const z = alpha.magSquared() - beta.magSquared();
+                    
+                    display.innerHTML = `
+                        <div style="text-align: center;">
+                            <svg width="200" height="200" viewBox="0 0 200 200" style="border: 1px solid #ddd; border-radius: 8px; background: white;">
+                                <!-- Sphere outline -->
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="#2196F3" stroke-width="2"/>
+                                
+                                <!-- Axes -->
+                                <line x1="20" y1="100" x2="180" y2="100" stroke="#666" stroke-width="1"/>
+                                <line x1="100" y1="20" x2="100" y2="180" stroke="#666" stroke-width="1"/>
+                                
+                                <!-- State vector -->
+                                <line x1="100" y1="100" x2="${100 + x * 80}" y2="${100 - z * 80}" stroke="#f44336" stroke-width="3"/>
+                                <circle cx="${100 + x * 80}" cy="${100 - z * 80}" r="4" fill="#f44336"/>
+                                
+                                <!-- Labels -->
+                                <text x="100" y="15" text-anchor="middle" fill="#333" font-size="12">|0⟩</text>
+                                <text x="100" y="195" text-anchor="middle" fill="#333" font-size="12">|1⟩</text>
+                                <text x="185" y="105" text-anchor="middle" fill="#333" font-size="12">|+⟩</text>
+                                <text x="15" y="105" text-anchor="middle" fill="#333" font-size="12">|-⟩</text>
+                            </svg>
+                            <div style="margin-top: 10px; font-family: monospace; font-size: 12px;">
+                                <div>X: ${x.toFixed(3)}</div>
+                                <div>Y: ${y.toFixed(3)}</div>
+                                <div>Z: ${z.toFixed(3)}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    display.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Bloch sphere visualization available only for single-qubit systems</p>';
+                }
+            }
+
+            updateJSON() {
+                // Only update JSON display if this component has a dedicated JSON display
+                // and is not a network view or node circuit
+                if (this.containerId === 'main-circuit') {
+                    const display = document.getElementById('circuit-json');
+                    if (display) {
+                        display.textContent = JSON.stringify(this.circuit, null, 2);
+                    }
+                }
+                
+                // For network view, update the network JSON display
+                if (this.options.isNetworkView) {
+                    const networkDisplay = document.getElementById('json-view-result');
+                    if (networkDisplay) {
+                        const preElement = networkDisplay.querySelector('pre');
+                        if (preElement) {
+                            preElement.textContent = JSON.stringify(this.circuit, null, 2);
+                        }
+                    }
+                }
+                
+                // For node circuits, don't update the main JSON display to avoid interference
+            }
+
+            setCircuitJSON(circuitData) {
+                this.circuit = { ...circuitData }; // Create deep copy to avoid reference issues
+                this.renderCircuitCanvas();
+                this.updateJSON();
+            }
+
+            getCircuitJSON() {
+                return { ...this.circuit }; // Return deep copy to avoid reference issues
+            }
+        }
+
+        // Global circuit components registry
+        window.circuitComponents = {};
+
+        // Network Simulator Class
+        class NetworkSimulator {
+            constructor() {
+                this.nodes = [];
+                this.entanglements = [];
+                this.activeNodeId = null;
+                this.networkCircuit = null;
+            }
+
+            addNode() {
+                const nodeId = this.nodes.length;
+                const node = {
+                    id: nodeId,
+                    name: `Node ${nodeId}`,
+                    circuit: null
+                };
+                
+                this.nodes.push(node);
+                this.renderNodeList();
+                this.selectNode(nodeId);
+                showNotification(`Node ${nodeId} added`, 'success');
+            }
+
+            removeNode(nodeId) {
+                this.nodes = this.nodes.filter(node => node.id !== nodeId);
+                this.entanglements = this.entanglements.filter(ent => 
+                    ent.node1 !== nodeId && ent.node2 !== nodeId
+                );
+                
+                if (this.activeNodeId === nodeId) {
+                    this.activeNodeId = this.nodes.length > 0 ? this.nodes[0].id : null;
+                }
+                
+                this.renderNodeList();
+                this.renderEntanglementConfig();
+                if (this.activeNodeId !== null) {
+                    this.selectNode(this.activeNodeId);
+                } else {
+                    this.clearNodeCircuit();
+                }
+                showNotification(`Node ${nodeId} removed`, 'success');
+            }
+
+            selectNode(nodeId) {
+                this.activeNodeId = nodeId;
+                const node = this.nodes.find(n => n.id === nodeId);
+                if (!node) return;
+
+                // Update active node display
+                document.querySelectorAll('.node-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`[data-node-id="${nodeId}"]`)?.classList.add('active');
+
+                // Update title
+                document.getElementById('node-circuit-title').textContent = `🖥️ ${node.name} Circuit`;
+
+                // Create or display circuit for this node
+                this.renderNodeCircuit(nodeId);
+            }
+
+            renderNodeList() {
+                const container = document.getElementById('node-list');
+                container.innerHTML = '';
+
+                this.nodes.forEach(node => {
+                    const nodeItem = document.createElement('div');
+                    nodeItem.className = 'node-item';
+                    nodeItem.dataset.nodeId = node.id;
+                    nodeItem.innerHTML = `
+                        <span>${node.name}</span>
+                        <button class="btn btn-error" style="padding: 4px 8px; font-size: 12px;" 
+                                onclick="networkSim.removeNode(${node.id})" title="Remove Node">✕</button>
+                    `;
+                    nodeItem.addEventListener('click', (e) => {
+                        if (e.target.tagName !== 'BUTTON') {
+                            this.selectNode(node.id);
+                        }
+                    });
+                    container.appendChild(nodeItem);
+                });
+
+                this.renderEntanglementConfig();
+            }
+
+            renderNodeCircuit(nodeId) {
+                const node = this.nodes.find(n => n.id === nodeId);
+                if (!node) return;
+
+                const container = document.getElementById('node-circuit-container');
+                const componentId = `node-${nodeId}-circuit`;
+                
+                container.innerHTML = `<div id="${componentId}" class="circuit-component"></div>`;
+
+                // Create circuit component for this node with isolated state
+                if (!node.circuitData) {
+                    // Initialize with default circuit data
+                    node.circuitData = {
+                        qubits: 2,
+                        steps: 5,
+                        gates: [],
+                        metadata: {
+                            title: node.name,
+                            created: new Date().toISOString(),
+                            version: "1.0"
+                        }
+                    };
+                }
+
+                node.circuit = new CircuitComponent(componentId, {
+                    qubits: node.circuitData.qubits,
+                    steps: node.circuitData.steps,
+                    showControls: true,
+                    title: node.name,
+                    nodeId: nodeId // Pass node ID for isolation
+                });
+
+                // Set the circuit data (deep copy to avoid reference issues)
+                node.circuit.setCircuitJSON(JSON.parse(JSON.stringify(node.circuitData)));
+                window.circuitComponents[componentId] = node.circuit;
+
+                // Set up event listener to save circuit data when it changes
+                this.setupNodeCircuitSaving(nodeId);
+            }
+
+            setupNodeCircuitSaving(nodeId) {
+                const node = this.nodes.find(n => n.id === nodeId);
+                if (!node || !node.circuit) return;
+
+                // Override the circuit's update methods to save data
+                const originalUpdateJSON = node.circuit.updateJSON.bind(node.circuit);
+                node.circuit.updateJSON = () => {
+                    // Save current circuit state to node data
+                    node.circuitData = JSON.parse(JSON.stringify(node.circuit.getCircuitJSON()));
+                    originalUpdateJSON();
+                };
+            }
+
+            clearNodeCircuit() {
+                const container = document.getElementById('node-circuit-container');
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 50px;">Add a node to start building circuits</p>';
+                document.getElementById('node-circuit-title').textContent = 'Select a Node';
+            }
+
+            renderEntanglementConfig() {
+                const container = document.getElementById('entanglement-pairs');
+                container.innerHTML = '';
+
+                if (this.nodes.length < 2) {
+                    container.innerHTML = '<p style="color: var(--text-secondary);">Add at least 2 nodes to configure entanglements</p>';
+                    return;
+                }
+
+                container.innerHTML = '<h4 style="margin-bottom: 15px;">Configure Entangled Pairs:</h4>';
+
+                // Generate all possible node pairs
+                for (let i = 0; i < this.nodes.length; i++) {
+                    for (let j = i + 1; j < this.nodes.length; j++) {
+                        const node1 = this.nodes[i];
+                        const node2 = this.nodes[j];
+                        
+                        // Create section for this node pair
+                        const pairSection = document.createElement('div');
+                        pairSection.style.cssText = `
+                            background: #f8f9fa;
+                            border: 1px solid var(--border);
+                            border-radius: var(--border-radius);
+                            padding: 15px;
+                            margin-bottom: 15px;
+                        `;
+                        
+                        pairSection.innerHTML = `
+                            <h5 style="margin-bottom: 10px; color: var(--primary-color);">
+                                🔗 Node ${node1.id} ↔ Node ${node2.id}
+                            </h5>
+                            <div id="entanglements-${node1.id}-${node2.id}">
+                                ${this.renderExistingEntanglements(node1.id, node2.id)}
+                            </div>
+                            <button class="btn btn-success" style="margin-top: 10px; font-size: 12px; padding: 6px 12px;" 
+                                    onclick="networkSim.addEntanglementPair(${node1.id}, ${node2.id})">
+                                ➕ Add EPR Pair
+                            </button>
+                        `;
+                        
+                        container.appendChild(pairSection);
+                    }
+                }
+            }
+
+            renderExistingEntanglements(node1Id, node2Id) {
+                const existingEntanglements = this.entanglements.filter(ent =>
+                    (ent.node1 === node1Id && ent.node2 === node2Id) ||
+                    (ent.node1 === node2Id && ent.node2 === node1Id)
+                );
+
+                if (existingEntanglements.length === 0) {
+                    return '<p style="color: var(--text-secondary); font-style: italic; margin: 10px 0;">No entanglements configured</p>';
+                }
+
+                let html = '';
+                existingEntanglements.forEach((ent, index) => {
+                    const displayNode1 = ent.node1 === node1Id ? ent.node1 : ent.node2;
+                    const displayNode2 = ent.node1 === node1Id ? ent.node2 : ent.node1;
+                    const displayQubit1 = ent.node1 === node1Id ? ent.qubit1 : ent.qubit2;
+                    const displayQubit2 = ent.node1 === node1Id ? ent.qubit2 : ent.qubit1;
+                    
+                    html += `
+                        <div class="entanglement-pair" style="margin-bottom: 8px;">
+                            <span>EPR Pair ${index + 1}: Node ${displayNode1}.q${displayQubit1} ↔ Node ${displayNode2}.q${displayQubit2}</span>
+                            <button class="btn btn-error" style="padding: 2px 6px; font-size: 11px; margin-left: 10px;" 
+                                    onclick="networkSim.removeEntanglementPair(${ent.node1}, ${ent.node2}, ${ent.qubit1}, ${ent.qubit2})" 
+                                    title="Remove this EPR pair">✕</button>
+                        </div>
+                    `;
+                });
+
+                return html;
+            }
+
+            addEntanglementPair(node1Id, node2Id) {
+                const node1 = this.nodes.find(n => n.id === node1Id);
+                const node2 = this.nodes.find(n => n.id === node2Id);
+                
+                const qubits1 = node1.circuit ? node1.circuit.circuit.qubits : 2;
+                const qubits2 = node2.circuit ? node2.circuit.circuit.qubits : 2;
+
+                // Get available qubits (not already entangled)
+                const usedQubits1 = this.entanglements
+                    .filter(ent => ent.node1 === node1Id || ent.node2 === node1Id)
+                    .map(ent => ent.node1 === node1Id ? ent.qubit1 : ent.qubit2);
+                
+                const usedQubits2 = this.entanglements
+                    .filter(ent => ent.node1 === node2Id || ent.node2 === node2Id)
+                    .map(ent => ent.node1 === node2Id ? ent.qubit1 : ent.qubit2);
+
+                const availableQubits1 = [];
+                const availableQubits2 = [];
+                
+                for (let i = 0; i < qubits1; i++) {
+                    if (!usedQubits1.includes(i)) availableQubits1.push(i);
+                }
+                
+                for (let i = 0; i < qubits2; i++) {
+                    if (!usedQubits2.includes(i)) availableQubits2.push(i);
+                }
+
+                if (availableQubits1.length === 0 || availableQubits2.length === 0) {
+                    showNotification('No available qubits for entanglement', 'error');
+                    return;
+                }
+
+                // Prompt for qubit selection
+                const qubit1 = prompt(`Select qubit for Node ${node1Id} (${availableQubits1.join(', ')}):`);
+                if (qubit1 === null) return;
+
+                const qubit1Num = parseInt(qubit1);
+                if (!availableQubits1.includes(qubit1Num)) {
+                    showNotification('Invalid qubit selection for Node ' + node1Id, 'error');
+                    return;
+                }
+
+                const qubit2 = prompt(`Select qubit for Node ${node2Id} (${availableQubits2.join(', ')}):`);
+                if (qubit2 === null) return;
+
+                const qubit2Num = parseInt(qubit2);
+                if (!availableQubits2.includes(qubit2Num)) {
+                    showNotification('Invalid qubit selection for Node ' + node2Id, 'error');
+                    return;
+                }
+
+                // Add the entanglement
+                this.entanglements.push({
+                    node1: node1Id,
+                    qubit1: qubit1Num,
+                    node2: node2Id,
+                    qubit2: qubit2Num
+                });
+
+                this.renderEntanglementConfig();
+                showNotification(`EPR pair added: Node ${node1Id}.q${qubit1Num} ↔ Node ${node2Id}.q${qubit2Num}`, 'success');
+            }
+
+            removeEntanglementPair(node1Id, node2Id, qubit1, qubit2) {
+                this.entanglements = this.entanglements.filter(ent =>
+                    !((ent.node1 === node1Id && ent.node2 === node2Id && ent.qubit1 === qubit1 && ent.qubit2 === qubit2) ||
+                      (ent.node1 === node2Id && ent.node2 === node1Id && ent.qubit1 === qubit2 && ent.qubit2 === qubit1))
+                );
+
+                this.renderEntanglementConfig();
+                showNotification(`EPR pair removed: Node ${node1Id}.q${qubit1} ↔ Node ${node2Id}.q${qubit2}`, 'success');
+            }
+
+            generateQubitPairOptions(node1, node2) {
+                let options = '';
+                const qubits1 = node1.circuitData ? node1.circuitData.qubits : 2;
+                const qubits2 = node2.circuitData ? node2.circuitData.qubits : 2;
+                
+                for (let i = 0; i < qubits1; i++) {
+                    for (let j = 0; j < qubits2; j++) {
+                        options += `<option value="${i},${j}">q${i} ↔ q${j}</option>`;
+                    }
+                }
+                return options;
+            }
+
+            updateEntanglement(node1Id, node2Id, value) {
+                // Remove existing entanglement between these nodes
+                this.entanglements = this.entanglements.filter(ent =>
+                    !((ent.node1 === node1Id && ent.node2 === node2Id) || 
+                      (ent.node1 === node2Id && ent.node2 === node1Id))
+                );
+
+                if (value) {
+                    const [qubit1, qubit2] = value.split(',').map(x => parseInt(x));
+                    this.entanglements.push({
+                        node1: node1Id,
+                        qubit1: qubit1,
+                        node2: node2Id,
+                        qubit2: qubit2
+                    });
+                    showNotification(`Entanglement configured: Node ${node1Id}.q${qubit1} ↔ Node ${node2Id}.q${qubit2}`, 'success');
+                }
+            }
+
+            generateNetworkCircuit() {
+                if (this.nodes.length === 0) {
+                    showNotification('Add nodes first', 'error');
+                    return;
+                }
+
+                // Calculate total qubits
+                let totalQubits = 0;
+                let maxSteps = 0;
+                const nodeOffsets = [];
+
+                this.nodes.forEach(node => {
+                    nodeOffsets.push(totalQubits);
+                    const qubits = node.circuitData ? node.circuitData.qubits : 2;
+                    const steps = node.circuitData ? node.circuitData.steps : 5;
+                    totalQubits += qubits;
+                    maxSteps = Math.max(maxSteps, steps);
+                });
+
+                // Add extra steps for entanglement setup and measurement
+                const networkSteps = maxSteps + 4;
+
+                // Create network circuit JSON
+                this.networkCircuit = {
+                    qubits: totalQubits,
+                    steps: networkSteps,
+                    gates: [],
+                    metadata: {
+                        title: 'Network Circuit',
+                        created: new Date().toISOString(),
+                        version: "1.0",
+                        nodes: this.nodes.map((node, idx) => ({
+                            id: node.id,
+                            name: node.name,
+                            qubits: node.circuitData ? node.circuitData.qubits : 2,
+                            offset: nodeOffsets[idx]
+                        })),
+                        entanglements: this.entanglements
+                    }
+                };
+
+                // Step 1: Create entangled pairs
+                this.entanglements.forEach(ent => {
+                    const offset1 = nodeOffsets[ent.node1];
+                    const offset2 = nodeOffsets[ent.node2];
+                    const globalQubit1 = offset1 + ent.qubit1;
+                    const globalQubit2 = offset2 + ent.qubit2;
+
+                    // Bell state preparation: H on first qubit, CNOT to second
+                    this.networkCircuit.gates.push({
+                        type: 'H',
+                        qubit: globalQubit1,
+                        step: 0
+                    });
+                    this.networkCircuit.gates.push({
+                        type: 'CNOT',
+                        qubit: globalQubit1,
+                        step: 1,
+                        controlQubit: globalQubit1,
+                        targetQubits: [globalQubit2]
+                    });
+                });
+
+                // Step 2: Apply individual node circuits
+                this.nodes.forEach((node, nodeIdx) => {
+                    if (node.circuitData && node.circuitData.gates.length > 0) {
+                        const offset = nodeOffsets[nodeIdx];
+                        
+                        node.circuitData.gates.forEach(gate => {
+                            const networkGate = JSON.parse(JSON.stringify(gate)); // Deep copy
+                            networkGate.qubit = offset + gate.qubit;
+                            networkGate.step = gate.step + 2; // Offset by entanglement steps
+                            
+                            if (gate.targetQubits) {
+                                networkGate.targetQubits = gate.targetQubits.map(q => offset + q);
+                            }
+                            if (gate.controlQubits) {
+                                networkGate.controlQubits = gate.controlQubits.map(q => offset + q);
+                            }
+                            if (gate.targetQubit !== undefined) {
+                                networkGate.targetQubit = offset + gate.targetQubit;
+                            }
+                            if (gate.controlQubit !== undefined) {
+                                networkGate.controlQubit = offset + gate.controlQubit;
+                            }
+                            
+                            this.networkCircuit.gates.push(networkGate);
+                        });
+                    }
+                });
+
+                // Step 3: Final measurement preparation (Hadamard on entangled qubits)
+                this.entanglements.forEach(ent => {
+                    const offset1 = nodeOffsets[ent.node1];
+                    const offset2 = nodeOffsets[ent.node2];
+                    const globalQubit1 = offset1 + ent.qubit1;
+                    const globalQubit2 = offset2 + ent.qubit2;
+
+                    this.networkCircuit.gates.push({
+                        type: 'H',
+                        qubit: globalQubit1,
+                        step: networkSteps - 1
+                    });
+                    this.networkCircuit.gates.push({
+                        type: 'H',
+                        qubit: globalQubit2,
+                        step: networkSteps - 1
+                    });
+                });
+
+                this.displayNetworkCircuit();
+                showNotification('Network circuit generated successfully', 'success');
+            }
+
+            displayNetworkCircuit() {
+                const resultsContainer = document.getElementById('network-results');
+                const circuitDisplay = document.getElementById('network-circuit-display');
+                
+                resultsContainer.style.display = 'block';
+                
+                circuitDisplay.innerHTML = `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                        <strong>Network Configuration:</strong><br>
+                        Total Qubits: ${this.networkCircuit.qubits}<br>
+                        Total Steps: ${this.networkCircuit.steps}<br>
+                        Nodes: ${this.nodes.length}<br>
+                        Entanglements: ${this.entanglements.length}
+                    </div>
+                    
+                    <!-- Network Circuit Visualization -->
+                    <div id="network-circuit-component" class="circuit-component" style="margin: 20px 0;">
+                        <!-- Will be populated by NetworkCircuitComponent -->
+                    </div>
+                    
+                    <!-- Network Results Tabs -->
+                    <div class="results-tabs">
+                        <button class="result-tab active" onclick="switchNetworkResultTab('circuit-view')">Circuit View</button>
+                        <button class="result-tab" onclick="switchNetworkResultTab('state-vector')">State Vector</button>
+                        <button class="result-tab" onclick="switchNetworkResultTab('probabilities')">Probabilities</button>
+                        <button class="result-tab" onclick="switchNetworkResultTab('json-view')">Network JSON</button>
+                    </div>
+
+                    <div id="network-circuit-view-result" class="result-content active">
+                        <div id="network-circuit-canvas"></div>
+                    </div>
+
+                    <div id="network-state-vector-result" class="result-content">
+                        <div id="network-statevector-display" class="state-vector"></div>
+                    </div>
+
+                    <div id="network-probabilities-result" class="result-content">
+                        <div class="chart-container">
+                            <canvas id="network-probability-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div id="network-json-view-result" class="result-content">
+                        <div style="max-height: 400px; overflow: auto; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 15px;">
+                            <pre>${this.getNetworkConfigurationJSON()}</pre>
+                        </div>
+                    </div>
+                `;
+
+                // Create network circuit visualization
+                this.createNetworkCircuitVisualization();
+            }
+
+            createNetworkCircuitVisualization() {
+                const containerId = 'network-circuit-component';
+                const networkComponent = new CircuitComponent(containerId, {
+                    qubits: this.networkCircuit.qubits,
+                    steps: this.networkCircuit.steps,
+                    showControls: false,
+                    title: 'Combined Network Circuit',
+                    isNetworkView: true
+                });
+
+                networkComponent.setCircuitJSON(this.networkCircuit);
+                window.circuitComponents[containerId] = networkComponent;
+
+                // Add node labels to help identify which qubits belong to which nodes
+                this.addNodeLabelsToNetworkCircuit();
+            }
+
+            addNodeLabelsToNetworkCircuit() {
+                const canvas = document.getElementById('network-circuit-component-canvas');
+                if (!canvas) return;
+
+                // Add node section headers
+                let currentOffset = 0;
+                this.networkCircuit.metadata.nodes.forEach(nodeInfo => {
+                    const headerDiv = document.createElement('div');
+                    headerDiv.style.cssText = `
+                        position: absolute;
+                        left: 10px;
+                        top: ${currentOffset * 70 + 10}px;
+                        background: var(--primary-color);
+                        color: white;
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 11px;
+                        font-weight: bold;
+                        z-index: 10;
+                    `;
+                    headerDiv.textContent = nodeInfo.name;
+                    canvas.appendChild(headerDiv);
+                    currentOffset += nodeInfo.qubits;
+                });
+            }
+
+            exportJSON() {
+                const data = JSON.stringify(this.circuit, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `quantum_circuit_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showNotification('Circuit exported successfully', 'success');
+            }
+
+            importJSON(jsonData) {
+                try {
+                    const imported = JSON.parse(jsonData);
+                    if (imported.qubits && imported.gates && Array.isArray(imported.gates)) {
+                        this.circuit = { ...imported }; // Create deep copy
+                        
+                        // Update input fields if they exist
+                        const qubitsInput = document.getElementById(`${this.containerId}-qubits`);
+                        const stepsInput = document.getElementById(`${this.containerId}-steps`);
+                        if (qubitsInput) qubitsInput.value = this.circuit.qubits;
+                        if (stepsInput) stepsInput.value = this.circuit.steps;
+                        
+                        this.renderCircuitCanvas();
+                        this.updateJSON();
+                        showNotification('Circuit imported successfully', 'success');
+                        return true;
+                    } else {
+                        showNotification('Invalid circuit JSON format', 'error');
+                        return false;
+                    }
+                } catch (error) {
+                    showNotification('Error parsing JSON: ' + error.message, 'error');
+                    return false;
+                }
+            }
+
+            runNetworkSimulation() {
+                if (!this.networkCircuit) {
+                    showNotification('Generate network circuit first', 'error');
+                    return;
+                }
+
+                try {
+                    // Use the existing network circuit component for simulation
+                    const networkComponent = window.circuitComponents['network-circuit-component'];
+                    if (networkComponent) {
+                        const result = networkComponent.runSimulation();
+                        this.displayNetworkResults(result);
+                        
+                        // Switch to state vector tab to show results
+                        switchNetworkResultTab('state-vector');
+                        showNotification('Network simulation completed', 'success');
+                    } else {
+                        showNotification('Network circuit component not found', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Network simulation error:', error);
+                    showNotification('Network simulation failed: ' + error.message, 'error');
+                }
+            }
+
+            displayNetworkResults(result) {
+                // Display state vector
+                const stateDisplay = document.getElementById('network-statevector-display');
+                if (stateDisplay) {
+                    stateDisplay.innerHTML = '<h4>Network State Vector Components:</h4>';
+                    
+                    for (let i = 0; i < result.stateVector._rows; i++) {
+                        const amplitude = result.stateVector.get(i, 0);
+                        const probability = amplitude.magSquared();
+                        
+                        if (probability > 0.001) {
+                            const binaryState = StringUtil.intToBinaryString(i, this.networkCircuit.qubits);
+                            stateDisplay.innerHTML += `
+                                <div style="margin: 5px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                                    <strong>|${binaryState}⟩:</strong> ${amplitude.toString()} 
+                                    <span style="color: #666;">(P = ${(probability * 100).toFixed(2)}%)</span>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+
+                // Display probabilities chart
+                this.displayNetworkProbabilities(result.probabilities);
+            }
+
+            displayNetworkProbabilities(probabilities) {
+                const canvas = document.getElementById('network-probability-chart');
+                if (!canvas) {
+                    console.error('Network probability chart canvas not found');
+                    return;
+                }
+
+                // Check if Chart.js is available
+                if (typeof Chart === 'undefined') {
+                    console.warn('Chart.js not available for network probability display');
+                    // Create fallback text-based chart
+                    const container = canvas.parentElement;
+                    container.innerHTML = this.createNetworkFallbackChart(probabilities);
+                    return;
+                }
+
+                // Destroy existing chart
+                if (window.networkProbabilityChartInstance) {
+                    window.networkProbabilityChartInstance.destroy();
+                }
+
+                const labels = [];
+                const data = [];
+                const backgroundColors = [];
+                
+                for (let i = 0; i < probabilities.length; i++) {
+                    if (probabilities[i] > 0.001) {
+                        const binaryState = StringUtil.intToBinaryString(i, this.networkCircuit.qubits);
+                        labels.push(`|${binaryState}⟩`);
+                        data.push(probabilities[i]);
+                        backgroundColors.push(`hsl(${(i * 360) / probabilities.length}, 70%, 60%)`);
+                    }
+                }
+
+                if (data.length === 0) {
+                    canvas.parentElement.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">No significant probability amplitudes to display</p>';
+                    return;
+                }
+
+                const ctx = canvas.getContext('2d');
+                window.networkProbabilityChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Probability',
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderColor: backgroundColors.map(color => color.replace('60%', '40%')),
+                            borderWidth: 2,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 1,
+                                ticks: {
+                                    callback: function(value) {
+                                        return (value * 100).toFixed(0) + '%';
+                                    }
+                                },
                                 title: {
                                     display: true,
                                     text: 'Probability'
@@ -1191,229 +2343,323 @@
                             }
                         },
                         plugins: {
-                            title: {
-                                display: true,
-                                text: 'Quantum State Probabilities'
-                            },
                             legend: {
                                 display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Network Quantum State Probabilities'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Probability: ${(context.parsed.y * 100).toFixed(2)}%`;
+                                    }
+                                }
                             }
                         }
                     }
                 });
-            } catch (error) {
-                console.warn('Chart.js error, falling back to text display:', error);
-                this.displayTextChart(probabilities, chartId);
             }
-        };
 
-        QuantumSimulator.prototype.displayTextChart = function(probabilities, chartId) {
-            var container = document.getElementById(chartId);
-            if (!container) return;
-            
-            var numQubits = Math.log2(probabilities.length);
-            var html = '<div style="background: white; padding: 20px; border-radius: 8px; font-family: monospace;">';
-            html += '<h4>Quantum State Probabilities:</h4>';
-            html += '<div style="max-height: 300px; overflow-y: auto;">';
-            
-            for (var i = 0; i < probabilities.length; i++) {
-                if (probabilities[i] > 0.001) {
-                    var binaryState = StringUtil.intToBinaryString(i, numQubits);
-                    var barWidth = Math.max(2, probabilities[i] * 400); // Scale bar width
-                    var color = probabilities[i] > 0.01 ? '#36a2eb' : '#c9cbcf';
-                    
-                    html += '<div style="margin: 5px 0; display: flex; align-items: center;">';
-                    html += '<span style="width: 80px; display: inline-block;">|' + binaryState + '⟩:</span>';
-                    html += '<div style="background: ' + color + '; height: 20px; width: ' + barWidth + 'px; margin-right: 10px;"></div>';
-                    html += '<span>' + probabilities[i].toFixed(4) + '</span>';
-                    html += '</div>';
-                }
-            }
-            
-            html += '</div></div>';
-            container.innerHTML = html;
-        };
-
-        QuantumSimulator.prototype.updateStateVector = function(stateVector, containerId) {
-            var container = document.getElementById(containerId);
-            if (!container) return;
-
-            var numQubits = Math.log2(stateVector._rows);
-            var html = '<h4>State Vector:</h4><div style="font-family: monospace; line-height: 1.6;">';
-            
-            for (var i = 0; i < stateVector._rows; i++) {
-                var amplitude = stateVector.get(i, 0);
-                var probability = amplitude.magSquared();
-                var binaryState = StringUtil.intToBinaryString(i, numQubits);
+            createNetworkFallbackChart(probabilities) {
+                let html = '<div style="background: white; padding: 20px; border-radius: 8px; font-family: monospace;">';
+                html += '<h4>Network Quantum State Probabilities:</h4>';
+                html += '<div style="max-height: 300px; overflow-y: auto;">';
                 
-                if (probability > 0.001) {
-                    html += '|' + binaryState + '⟩: ' + amplitude.toString() + ' (P = ' + probability.toFixed(4) + ')<br>';
+                for (let i = 0; i < probabilities.length; i++) {
+                    if (probabilities[i] > 0.001) {
+                        const binaryState = StringUtil.intToBinaryString(i, this.networkCircuit.qubits);
+                        const percentage = (probabilities[i] * 100).toFixed(2);
+                        const barWidth = Math.max(probabilities[i] * 300, 2);
+                        const color = `hsl(${(i * 360) / probabilities.length}, 70%, 60%)`;
+                        
+                        html += `
+                            <div style="margin: 5px 0; display: flex; align-items: center;">
+                                <span style="width: 80px; display: inline-block;">|${binaryState}⟩:</span>
+                                <div style="background: ${color}; height: 20px; width: ${barWidth}px; margin-right: 10px; border-radius: 2px;"></div>
+                                <span>${percentage}%</span>
+                            </div>
+                        `;
+                    }
+                }
+                
+                html += '</div></div>';
+                return html;
+            }
+
+            clearNetwork() {
+                this.nodes = [];
+                this.entanglements = [];
+                this.activeNodeId = null;
+                this.networkCircuit = null;
+                
+                this.renderNodeList();
+                this.clearNodeCircuit();
+                document.getElementById('network-results').style.display = 'none';
+                showNotification('Network cleared', 'success');
+            }
+
+            getNetworkConfigurationJSON() {
+                const networkData = {
+                    nodes: this.nodes.map(node => ({
+                        id: node.id,
+                        name: node.name,
+                        circuitData: node.circuitData || {
+                            qubits: 2,
+                            steps: 5,
+                            gates: [],
+                            metadata: {
+                                title: node.name,
+                                created: new Date().toISOString(),
+                                version: "1.0"
+                            }
+                        }
+                    })),
+                    entanglements: this.entanglements,
+                    metadata: {
+                        title: 'Quantum Network Configuration',
+                        created: new Date().toISOString(),
+                        version: "1.0",
+                        totalNodes: this.nodes.length,
+                        totalEntanglements: this.entanglements.length
+                    }
+                };
+                
+                return JSON.stringify(networkData, null, 2);
+            }
+
+            exportNetworkJSON() {
+                const data = this.getNetworkConfigurationJSON();
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `quantum_network_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showNotification('Network configuration exported successfully', 'success');
+            }
+
+            importNetworkJSON(jsonData) {
+                try {
+                    const imported = JSON.parse(jsonData);
+                    
+                    // Validate the imported data structure
+                    if (!imported.nodes || !Array.isArray(imported.nodes) || 
+                        !imported.entanglements || !Array.isArray(imported.entanglements)) {
+                        showNotification('Invalid network JSON format: missing nodes or entanglements', 'error');
+                        return false;
+                    }
+
+                    // Clear current network
+                    this.clearNetwork();
+
+                    // Import nodes
+                    imported.nodes.forEach(nodeData => {
+                        const node = {
+                            id: nodeData.id,
+                            name: nodeData.name || `Node ${nodeData.id}`,
+                            circuitData: nodeData.circuitData || {
+                                qubits: 2,
+                                steps: 5,
+                                gates: [],
+                                metadata: {
+                                    title: nodeData.name || `Node ${nodeData.id}`,
+                                    created: new Date().toISOString(),
+                                    version: "1.0"
+                                }
+                            }
+                        };
+                        this.nodes.push(node);
+                    });
+
+                    // Import entanglements
+                    this.entanglements = [...imported.entanglements];
+
+                    // Update UI
+                    this.renderNodeList();
+                    
+                    // Select first node if available
+                    if (this.nodes.length > 0) {
+                        this.selectNode(this.nodes[0].id);
+                    } else {
+                        this.clearNodeCircuit();
+                    }
+
+                    showNotification('Network configuration imported successfully', 'success');
+                    return true;
+                    
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showNotification('Error parsing network JSON: ' + error.message, 'error');
+                    return false;
                 }
             }
-            
-            html += '</div>';
-            container.innerHTML = html;
-        };
+        }
 
-        QuantumSimulator.prototype.clearCircuit = function() {
-            this.circuit = [];
-            var circuitContainer = document.getElementById('circuit');
-            if (circuitContainer) {
-                circuitContainer.innerHTML = '';
-            }
-            this.clearResults();
-        };
+        // Global network simulator instance
+        const networkSim = new NetworkSimulator();
 
-        QuantumSimulator.prototype.clearResults = function() {
-            var stateVectorContainer = document.getElementById('stateVector');
-            if (stateVectorContainer) {
-                stateVectorContainer.innerHTML = '';
-            }
-            if (window.probabilityChart_instance) {
-                window.probabilityChart_instance.destroy();
-            }
-        };
+        // Utility Functions
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
 
-        QuantumSimulator.prototype.showError = function(message) {
-            this.showMessage(message, 'error');
-        };
-
-        QuantumSimulator.prototype.showSuccess = function(message) {
-            this.showMessage(message, 'success');
-        };
-
-        QuantumSimulator.prototype.showMessage = function(message, type) {
-            var existingMessages = document.querySelectorAll('.error, .success');
-            for (var i = 0; i < existingMessages.length; i++) {
-                existingMessages[i].remove();
-            }
-            
-            var messageDiv = document.createElement('div');
-            messageDiv.className = type;
-            messageDiv.textContent = message;
-            
-            var activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) {
-                activeTab.insertBefore(messageDiv, activeTab.firstChild);
-                setTimeout(function() {
-                    if (messageDiv.parentNode) {
-                        messageDiv.remove();
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
                     }
-                }, 5000);
-            }
-        };
-
-        // Global functions for UI
-        function showTab(tabName) {
-            var tabs = document.querySelectorAll('.tab');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-            
-            var contents = document.querySelectorAll('.tab-content');
-            for (var i = 0; i < contents.length; i++) {
-                contents[i].classList.remove('active');
-            }
-            
-            var targetTab = document.querySelector('[onclick="showTab(\'' + tabName + '\')"]');
-            var targetContent = document.getElementById(tabName + '-tab');
-            
-            if (targetTab) targetTab.classList.add('active');
-            if (targetContent) targetContent.classList.add('active');
+                }, 300);
+            }, 3000);
         }
 
-        function createCircuit() {
-            if (simulator) {
-                simulator.createCircuit();
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function switchResultTab(tabName) {
+            // Update result tab buttons
+            document.querySelectorAll('.result-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[onclick="switchResultTab('${tabName}')"]`).classList.add('active');
+
+            // Update result content
+            document.querySelectorAll('.result-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-result`).classList.add('active');
+        }
+
+        function exportCircuitJSON() {
+            const mainCircuit = window.circuitComponents['main-circuit'];
+            if (mainCircuit) {
+                mainCircuit.exportJSON();
             }
         }
 
-        function createNodeCircuit(nodeNum) {
-            if (simulator) {
-                simulator.createNodeCircuit(nodeNum);
+        function importCircuitJSON() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const mainCircuit = window.circuitComponents['main-circuit'];
+                    if (mainCircuit) {
+                        mainCircuit.importJSON(e.target.result);
+                    }
+                };
+                reader.readAsText(file);
             }
         }
 
-        function runSimulation() {
-            if (simulator) {
-                simulator.runSimulation();
-            }
+        function addNetworkNode() {
+            networkSim.addNode();
         }
 
-        function runNetworkSimulation() {
-            if (simulator) {
-                simulator.runNetworkSimulation();
-            }
+        function clearNetwork() {
+            networkSim.clearNetwork();
         }
 
         function generateNetworkCircuit() {
-            if (simulator) {
-                simulator.generateNetworkCircuit();
+            networkSim.generateNetworkCircuit();
+        }
+
+        function runNetworkSimulation() {
+            networkSim.runNetworkSimulation();
+        }
+
+        function exportNetworkJSON() {
+            networkSim.exportNetworkJSON();
+        }
+
+        function importNetworkJSON() {
+            const fileInput = document.getElementById('network-import-file');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    networkSim.importNetworkJSON(e.target.result);
+                };
+                reader.readAsText(file);
             }
         }
 
-        function clearCircuit() {
-            if (simulator) {
-                simulator.clearCircuit();
+        function switchNetworkResultTab(tabName) {
+            // Update network result tab buttons
+            document.querySelectorAll('#network-results .result-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const targetTab = document.querySelector(`[onclick="switchNetworkResultTab('${tabName}')"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            // Update network result content - use network-specific IDs
+            document.querySelectorAll('#network-results .result-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const targetContent = document.getElementById(`network-${tabName}-result`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+
+            // If switching to probabilities tab and we have a chart instance, refresh it
+            if (tabName === 'probabilities' && window.networkProbabilityChartInstance) {
+                setTimeout(() => {
+                    window.networkProbabilityChartInstance.resize();
+                    window.networkProbabilityChartInstance.update();
+                }, 100);
             }
         }
 
-        // Initialize the application
+        function addEntanglementPair(node1Id, node2Id) {
+            networkSim.addEntanglementPair(node1Id, node2Id);
+        }
+
+        function removeEntanglementPair(node1Id, node2Id, qubit1, qubit2) {
+            networkSim.removeEntanglementPair(node1Id, node2Id, qubit1, qubit2);
+        }
+
+        // Initialize Application
         document.addEventListener('DOMContentLoaded', function() {
             try {
-                console.log('Initializing Quantum Simulator...');
+                console.log('Initializing QCNS...');
                 
-                // Check for required libraries
-                if (typeof math === 'undefined') {
-                    throw new Error('Math.js library not loaded');
-                }
+                // Create main circuit component
+                const mainCircuit = new CircuitComponent('main-circuit', {
+                    qubits: 3,
+                    steps: 8,
+                    showControls: true,
+                    title: 'Main Circuit'
+                });
                 
-                // Chart.js is optional - we have a fallback
-                if (typeof Chart === 'undefined') {
-                    console.warn('Chart.js not available - using text-based charts');
-                }
+                window.circuitComponents['main-circuit'] = mainCircuit;
                 
-                // Initialize Sim first
-                Sim.init();
-                console.log('Sim initialized');
+                // Initialize JSON display
+                mainCircuit.updateJSON();
                 
-                // Create simulator instance
-                simulator = new QuantumSimulator();
-                console.log('Simulator created successfully');
-                
-                // Create initial circuit
-                simulator.createCircuit();
-                console.log('Initial circuit created');
-                
-                // Setup initial drag and drop
-                setTimeout(function() {
-                    simulator.setupDragAndDrop();
-                    console.log('Drag and drop setup complete');
-                }, 200);
-                
-                // Show success message
-                setTimeout(function() {
-                    if (simulator) {
-                        simulator.showSuccess('Quantum Simulator initialized successfully! Drag gates to build circuits.');
-                    }
-                }, 1000);
+                console.log('QCNS initialized successfully');
+                showNotification('🔬 QCNS initialized successfully! Ready to build quantum circuits.', 'success');
                 
             } catch (error) {
                 console.error('Initialization error:', error);
-                var errorDiv = document.createElement('div');
-                errorDiv.style.cssText = 'padding: 20px; text-align: center; color: red; background: #fff; margin: 20px; border-radius: 10px; border: 2px solid #dc3545;';
-                errorDiv.innerHTML = 
-                    '<h2>🚨 Error Loading Simulator</h2>' +
-                    '<p>There was an error initializing the quantum simulator.</p>' +
-                    '<p><strong>Error:</strong> ' + error.message + '</p>' +
-                    '<p><strong>Troubleshooting:</strong></p>' +
-                    '<ul style="text-align: left; display: inline-block;">' +
-                    '<li>Make sure you have an internet connection for loading libraries</li>' +
-                    '<li>Try refreshing the page</li>' +
-                    '<li>Check browser console for more details</li>' +
-                    '</ul>' +
-                    '<button onclick="location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">🔄 Reload Page</button>';
-                document.body.appendChild(errorDiv);
+                showNotification('Failed to initialize QCNS: ' + error.message, 'error');
             }
         });
     </script>
