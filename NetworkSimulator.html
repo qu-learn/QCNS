@@ -3,121 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QCNS - Quantum Circuit & Network Simulator</title>
+    <title>Quantum Network Simulator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.0.2/math.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-
-        <!-- Tab Navigation -->
-        <div class="tab-nav">
-            <button class="tab-button active" onclick="switchTab('circuit')">
-                Circuit Simulator
-            </button>
-            <button class="tab-button" onclick="switchTab('network')">
-                Network Simulator
-            </button>
-        </div>
-
-        <!-- Circuit Simulator Tab -->
-        <div id="circuit-tab" class="tab-content active">
-            <div id="main-circuit" class="circuit-component">
-                <!-- This will be populated by the CircuitComponent -->
+        <!-- Network Simulator Content -->
+        <div class="network-layout">
+            <!-- Network Controls -->
+            <div class="network-controls">
+                <h3>Network Nodes</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn btn-success" onclick="addNetworkNode()">Add Node</button>
+                    <button class="btn btn-error" onclick="clearNetwork()">Clear All</button>
+                    <button class="btn btn-primary" onclick="exportNetworkJSON()">Export Network</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('network-import-file').click()">Import Network</button>
+                    <input type="file" id="network-import-file" accept=".json" style="display: none;" onchange="importNetworkJSON()">
+                </div>
+                <div id="node-list" class="node-list">
+                    <!-- Nodes will be listed here -->
+                </div>
             </div>
 
-            <!-- Results Panel -->
-            <div class="results-panel">
-                <h3 style="margin-bottom: 20px; color: var(--primary-color);">Simulation Results</h3>
-                <div class="results-tabs">
-                    <button class="result-tab active" onclick="switchResultTab('statevector')">State Vector</button>
-                    <button class="result-tab" onclick="switchResultTab('probabilities')">Probabilities</button>
-                    <button class="result-tab" onclick="switchResultTab('bloch')">Bloch Spheres</button>
-                    <button class="result-tab" onclick="switchResultTab('json')">Circuit JSON</button>
-                </div>
-
-                <div id="statevector-result" class="result-content active">
-                    <h4>Final State Vector</h4>
-                    <div id="statevector-display" class="state-vector"></div>
-                </div>
-
-                <div id="probabilities-result" class="result-content">
-                    <h4>Probability Distribution</h4>
-                    <div class="chart-container">
-                        <canvas id="probability-chart"></canvas>
-                    </div>
-                </div>
-
-                <div id="bloch-result" class="result-content">
-                    <h4>Bloch Sphere Visualization</h4>
-                    <div id="bloch-display"></div>
-                </div>
-
-                <div id="json-result" class="result-content">
-                    <h4>Circuit JSON Definition</h4>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn btn-primary" onclick="exportCircuitJSON()">Export JSON</button>
-                        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importCircuitJSON()">
-                        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Import JSON</button>
-                    </div>
-                    <pre id="circuit-json" style="background: #f8f9fa; padding: 15px; border-radius: 6px; overflow: auto; max-height: 400px;"></pre>
+            <!-- Active Node Circuit -->
+            <div class="node-circuit">
+                <h3 id="node-circuit-title">Select a Node</h3>
+                <div id="node-circuit-container">
+                    <p style="text-align: center; color: var(--text-secondary); padding: 50px;">
+                        Add a node to start building circuits
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Network Simulator Tab -->
-        <div id="network-tab" class="tab-content">
-            <div class="network-layout">
-                <!-- Network Controls -->
-                <div class="network-controls">
-                    <h3>Network Nodes</h3>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn btn-success" onclick="addNetworkNode()">Add Node</button>
-                        <button class="btn btn-error" onclick="clearNetwork()">Clear All</button>
-                        <button class="btn btn-primary" onclick="exportNetworkJSON()">Export Network</button>
-                        <button class="btn btn-secondary" onclick="document.getElementById('network-import-file').click()">Import Network</button>
-                        <input type="file" id="network-import-file" accept=".json" style="display: none;" onchange="importNetworkJSON()">
-                    </div>
-                    <div id="node-list" class="node-list">
-                        <!-- Nodes will be listed here -->
-                    </div>
-                </div>
-
-                <!-- Active Node Circuit -->
-                <div class="node-circuit">
-                    <h3 id="node-circuit-title">Select a Node</h3>
-                    <div id="node-circuit-container">
-                        <p style="text-align: center; color: var(--text-secondary); padding: 50px;">
-                            Add a node to start building circuits
-                        </p>
-                    </div>
-                </div>
+        <!-- Entanglement Configuration -->
+        <div class="entanglement-config">
+            <h3 style="margin-bottom: 15px; color: var(--primary-color);">🔗 Entanglement Configuration</h3>
+            <div id="entanglement-pairs">
+                <p style="color: var(--text-secondary);">Add at least 2 nodes to configure entanglements</p>
             </div>
-
-            <!-- Entanglement Configuration -->
-            <div class="entanglement-config">
-                <h3 style="margin-bottom: 15px; color: var(--primary-color);">🔗 Entanglement Configuration</h3>
-                <div id="entanglement-pairs">
-                    <p style="color: var(--text-secondary);">Add at least 2 nodes to configure entanglements</p>
-                </div>
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button class="btn btn-primary" onclick="generateNetworkCircuit()">Generate Network Circuit</button>
-                    <button class="btn btn-success" onclick="runNetworkSimulation()">▶Run Network Simulation</button>
-                </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="generateNetworkCircuit()">Generate Network Circuit</button>
+                <button class="btn btn-success" onclick="runNetworkSimulation()">▶Run Network Simulation</button>
             </div>
+        </div>
 
-            <!-- Network Results -->
-            <div id="network-results" class="results-panel" style="display: none;">
-                <h3 style="margin-bottom: 20px; color: var(--primary-color);">Network Simulation Results</h3>
-                <div id="network-circuit-display"></div>
-                <div id="network-state-display" class="state-vector"></div>
-            </div>
+        <!-- Network Results -->
+        <div id="network-results" class="results-panel" style="display: none;">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color);">Network Simulation Results</h3>
+            <div id="network-circuit-display"></div>
+            <div id="network-state-display" class="state-vector"></div>
         </div>
     </div>
 
-    <!-- Quantum Core Library -->
+
     <script>
+        //Quantum Core Library
+
         // Global configuration
         const defaultDecimalPrecision = 3;
         const precisionForApproximateComparison = 0.01;
@@ -595,9 +539,9 @@
                     
                     slots += `
                         <div class="${slotClass}" 
-                             data-qubit="${qubit}" 
-                             data-step="${step}"
-                             onclick="window.circuitComponents['${this.containerId}'].removeGate(${qubit}, ${step})">
+                                data-qubit="${qubit}" 
+                                data-step="${step}"
+                                onclick="window.circuitComponents['${this.containerId}'].removeGate(${qubit}, ${step})">
                             ${content}
                         </div>
                     `;
@@ -1379,7 +1323,7 @@
             removeEntanglementPair(node1Id, node2Id, qubit1, qubit2) {
                 this.entanglements = this.entanglements.filter(ent =>
                     !((ent.node1 === node1Id && ent.node2 === node2Id && ent.qubit1 === qubit1 && ent.qubit2 === qubit2) ||
-                      (ent.node1 === node2Id && ent.node2 === node1Id && ent.qubit1 === qubit2 && ent.qubit2 === qubit1))
+                        (ent.node1 === node2Id && ent.node2 === node1Id && ent.qubit1 === qubit2 && ent.qubit2 === qubit1))
                 );
 
                 this.renderEntanglementConfig();
@@ -1403,7 +1347,7 @@
                 // Remove existing entanglement between these nodes
                 this.entanglements = this.entanglements.filter(ent =>
                     !((ent.node1 === node1Id && ent.node2 === node2Id) || 
-                      (ent.node1 === node2Id && ent.node2 === node1Id))
+                        (ent.node1 === node2Id && ent.node2 === node1Id))
                 );
 
                 if (value) {
@@ -2092,27 +2036,12 @@
         // Initialize Application
         document.addEventListener('DOMContentLoaded', function() {
             try {
-                console.log('Initializing QCNS...');
-                
-                // Create main circuit component
-                const mainCircuit = new CircuitComponent('main-circuit', {
-                    qubits: 3,
-                    steps: 8,
-                    showControls: true,
-                    title: 'Main Circuit'
-                });
-                
-                window.circuitComponents['main-circuit'] = mainCircuit;
-                
-                // Initialize JSON display
-                mainCircuit.updateJSON();
-                
-                console.log('QCNS initialized successfully');
-                showNotification('🔬 QCNS initialized successfully! Ready to build quantum circuits.', 'success');
+                console.log('Initializing Quantum Network Simulator...');
+                showNotification('🌐 Network Simulator initialized successfully!', 'success');
                 
             } catch (error) {
                 console.error('Initialization error:', error);
-                showNotification('Failed to initialize QCNS: ' + error.message, 'error');
+                showNotification('Failed to initialize Network Simulator: ' + error.message, 'error');
             }
         });
     </script>
