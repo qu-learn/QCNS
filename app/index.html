@@ -28,9 +28,87 @@
         <div id="circuit-tab" class="tab-content active">
             <div id="circuit-simulator-container"></div>
         </div>
+
+        <!-- Tab 2: Network Simulator -->
+        <div id="network-tab" class="tab-content">
+            <div class="network-layout">
+                <!-- Network Canvas and Controls -->
+                <div class="network-controls">
+                    <h3>Network Nodes</h3>
+                    <div class="form-group">
+                        <input type="text" id="node-name" placeholder="Node name" class="form-input">
+                        <input type="number" id="node-qubits" value="2" min="1" max="10" class="form-input-number">
+                        <button class="btn btn-primary" id="add-node-btn">Add Node</button>
+                    </div>
+                    <div id="node-list" class="node-list">
+                        <!-- Nodes will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Network Visualization Canvas -->
+                <div class="network-canvas-wrapper">
+                    <h3 class="section-title">Network Topology</h3>
+                    <canvas id="network-canvas" width="500" height="400" class="network-canvas"></canvas>
+                    <div class="button-group">
+                        <button class="btn btn-success" id="run-network-btn">Run Network</button>
+                        <button class="btn btn-warning" id="clear-network-btn">Clear Network</button>
+                        <button class="btn btn-secondary" id="export-network-qasm-btn">Export QASM</button>
+                        <button class="btn btn-primary" id="export-network-json-btn">Export JSON</button>
+                        <button class="btn btn-primary" id="import-network-json-btn">Import JSON</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entanglement Configuration -->
+            <div class="entanglement-config">
+                <h3 class="section-title">Entanglement Configuration</h3>
+                <div class="entanglement-grid">
+                    <div>
+                        <label class="form-label">Node 1</label>
+                        <select id="entangle-node1" class="form-select">
+                            <option value="">Select node</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Qubit 1</label>
+                        <input type="number" id="entangle-qubit1" value="0" min="0" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Node 2</label>
+                        <select id="entangle-node2" class="form-select">
+                            <option value="">Select node</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Qubit 2</label>
+                        <input type="number" id="entangle-qubit2" value="0" min="0" class="form-input">
+                    </div>
+                    <div class="entanglement-grid-button">
+                        <button class="btn btn-primary" id="add-entanglement-btn">Add Entanglement</button>
+                    </div>
+                </div>
+                <div id="entanglement-list" class="entanglement-list">
+                    <!-- Entanglements will be listed here -->
+                </div>
+            </div>
+
+            <!-- Network Visualizer -->
+            <div id="network-visualizer"></div>
+        </div>
     </div>
 
-   
+    <!-- Node Circuit Editor Modal -->
+    <div id="node-editor-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="node-editor-title" class="modal-title">Edit Node Circuit</h3>
+                <button id="close-node-editor-btn" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="node-editor-content"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- QCNS Application -->
     <script type="module">
@@ -39,6 +117,8 @@
             QuantumCircuit,
             QuantumRegister,
             ClassicalRegister,
+            QuantumNetwork,
+            QuantumNetworkNode,
             QuantumSimulator,
             QasmTranspiler,
             ComplexMath,
@@ -49,6 +129,8 @@
         window.QuantumCircuit = QuantumCircuit;
         window.QuantumRegister = QuantumRegister;
         window.ClassicalRegister = ClassicalRegister;
+        window.QuantumNetwork = QuantumNetwork;
+        window.QuantumNetworkNode = QuantumNetworkNode;
         window.QuantumSimulator = QuantumSimulator;
         window.QasmTranspiler = QasmTranspiler;
         window.ComplexMath = ComplexMath;
