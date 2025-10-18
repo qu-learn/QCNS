@@ -95,6 +95,40 @@
             <!-- Network Visualizer -->
             <div id="network-visualizer"></div>
         </div>
+
+        <!-- Tab 3: JS Sandbox -->
+        <div id="sandbox-tab" class="tab-content">
+            <div class="sandbox-container">
+                <h3 class="section-title">JavaScript Sandbox</h3>
+                <p class="sandbox-description">
+                    Write JavaScript code to programmatically interact with the QCNS library.
+                    Available classes: QuantumCircuit, QuantumRegister, ClassicalRegister, QuantumNetwork, etc.
+                </p>
+                <div class="button-group">
+                    <button class="btn btn-success" id="execute-sandbox-btn">▶ Execute Code</button>
+                    <button class="btn btn-warning" id="clear-sandbox-code-btn">Clear Code</button>
+                    <button class="btn btn-secondary" id="clear-sandbox-console-btn">Clear Console</button>
+                    <select id="sandbox-example-select" class="form-select" style="max-width: 250px;">
+                        <option value="">-- Choose an Example --</option>
+                    </select>
+                </div>
+                <div class="sandbox-editor-container">
+                    <!-- Code Editor -->
+                    <div>
+                        <h4 class="sandbox-label">Code Editor</h4>
+                        <textarea id="sandbox-code" class="code-editor" placeholder="// Write your QCNS code here..."></textarea>
+                    </div>
+                    <!-- Console Output -->
+                    <div>
+                        <h4 class="sandbox-label">Console Output</h4>
+                        <div id="sandbox-console" class="console-output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sandbox Visualizer -->
+            <div id="sandbox-visualizer"></div>
+        </div>
     </div>
 
     <!-- Node Circuit Editor Modal -->
@@ -140,7 +174,10 @@
 
         // Load application modules
         const modules = [
+            'components/QuantumVisualizer.js',
             'components/CircuitEditor.js',
+            'components/NetworkEditor.js',
+            'components/Sandbox.js',
             'utils/TabManager.js',
             'utils/App.js'
         ];
