@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QCNS - Quantum Circuit & Network Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="platform-header">
+            <h1 class="platform-title">QCNS Platform</h1>
+            <p class="platform-subtitle">Quantum Circuit & Network Simulator</p>
+            <p class="platform-subtitle-small">Powered by QCNS Library | OpenQASM v3 Support</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-button active" data-tab="circuit-tab">Circuit Simulator</button>
+            <button class="tab-button" data-tab="network-tab">Network Simulator</button>
+            <button class="tab-button" data-tab="sandbox-tab">JS Sandbox</button>
+        </nav>
+
+        <!-- Tab 1: Circuit Simulator -->
+        <div id="circuit-tab" class="tab-content active">
+            <div id="circuit-simulator-container"></div>
+        </div>
+
+        <!-- Tab 2: Network Simulator -->
+        <div id="network-tab" class="tab-content">
+            <div class="network-layout">
+                <!-- Network Canvas and Controls -->
+                <div class="network-controls">
+                    <h3>Network Nodes</h3>
+                    <div class="form-group">
+                        <input type="text" id="node-name" placeholder="Node name" class="form-input">
+                        <input type="number" id="node-qubits" value="2" min="1" max="10" class="form-input-number">
+                        <button class="btn btn-primary" id="add-node-btn">Add Node</button>
+                    </div>
+                    <div id="node-list" class="node-list">
+                        <!-- Nodes will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Network Visualization Canvas -->
+                <div class="network-canvas-wrapper">
+                    <h3 class="section-title">Network Topology</h3>
+                    <canvas id="network-canvas" width="500" height="400" class="network-canvas"></canvas>
+                    <div class="button-group">
+                        <button class="btn btn-success" id="run-network-btn">Run Network</button>
+                        <button class="btn btn-warning" id="clear-network-btn">Clear Network</button>
+                        <button class="btn btn-secondary" id="export-network-qasm-btn">Export QASM</button>
+                        <button class="btn btn-primary" id="export-network-json-btn">Export JSON</button>
+                        <button class="btn btn-primary" id="import-network-json-btn">Import JSON</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entanglement Configuration -->
+            <div class="entanglement-config">
+                <h3 class="section-title">Entanglement Configuration</h3>
+                <div class="entanglement-grid">
+                    <div>
+                        <label class="form-label">Node 1</label>
+                        <select id="entangle-node1" class="form-select">
+                            <option value="">Select node</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Qubit 1</label>
+                        <input type="number" id="entangle-qubit1" value="0" min="0" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Node 2</label>
+                        <select id="entangle-node2" class="form-select">
+                            <option value="">Select node</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Qubit 2</label>
+                        <input type="number" id="entangle-qubit2" value="0" min="0" class="form-input">
+                    </div>
+                    <div class="entanglement-grid-button">
+                        <button class="btn btn-primary" id="add-entanglement-btn">Add Entanglement</button>
+                    </div>
+                </div>
+                <div id="entanglement-list" class="entanglement-list">
+                    <!-- Entanglements will be listed here -->
+                </div>
+            </div>
+
+            <!-- Network Visualizer -->
+            <div id="network-visualizer"></div>
+        </div>
+
+        <!-- Tab 3: JS Sandbox -->
+        <div id="sandbox-tab" class="tab-content">
+            <div class="sandbox-container">
+                <h3 class="section-title">JavaScript Sandbox</h3>
+                <p class="sandbox-description">
+                    Write JavaScript code to programmatically interact with the QCNS library.
+                    Available classes: QuantumCircuit, QuantumRegister, ClassicalRegister, QuantumNetwork, etc.
+                </p>
+                <div class="button-group">
+                    <button class="btn btn-success" id="execute-sandbox-btn">▶ Execute Code</button>
+                    <button class="btn btn-warning" id="clear-sandbox-code-btn">Clear Code</button>
+                    <button class="btn btn-secondary" id="clear-sandbox-console-btn">Clear Console</button>
+                    <select id="sandbox-example-select" class="form-select" style="max-width: 250px;">
+                        <option value="">-- Choose an Example --</option>
+                    </select>
+                </div>
+                <div class="sandbox-editor-container">
+                    <!-- Code Editor -->
+                    <div>
+                        <h4 class="sandbox-label">Code Editor</h4>
+                        <textarea id="sandbox-code" class="code-editor" placeholder="// Write your QCNS code here..."></textarea>
+                    </div>
+                    <!-- Console Output -->
+                    <div>
+                        <h4 class="sandbox-label">Console Output</h4>
+                        <div id="sandbox-console" class="console-output"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sandbox Visualizer -->
+            <div id="sandbox-visualizer"></div>
+        </div>
+    </div>
+
+    <!-- Node Circuit Editor Modal -->
+    <div id="node-editor-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="node-editor-title" class="modal-title">Edit Node Circuit</h3>
+                <button id="close-node-editor-btn" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="node-editor-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QCNS Application -->
+    <script type="module">
+        // Import QCNS library
+        import {
+            QuantumCircuit,
+            QuantumRegister,
+            ClassicalRegister,
+            QuantumNetwork,
+            QuantumNetworkNode,
+            QuantumSimulator,
+            QasmTranspiler,
+            ComplexMath,
+            QuantumGates
+        } from '../lib/index.js';
+
+        // Make QCNS classes globally available for sandbox
+        window.QuantumCircuit = QuantumCircuit;
+        window.QuantumRegister = QuantumRegister;
+        window.ClassicalRegister = ClassicalRegister;
+        window.QuantumNetwork = QuantumNetwork;
+        window.QuantumNetworkNode = QuantumNetworkNode;
+        window.QuantumSimulator = QuantumSimulator;
+        window.QasmTranspiler = QasmTranspiler;
+        window.ComplexMath = ComplexMath;
+        window.QuantumGates = QuantumGates;
+
+        console.log('QCNS Library loaded');
+
+        // Load application modules
+        const modules = [
+            'components/QuantumVisualizer.js',
+            'components/CircuitEditor.js',
+            'components/NetworkEditor.js',
+            'components/Sandbox.js',
+            'utils/TabManager.js',
+            'utils/App.js'
+        ];
+
+        for (const module of modules) {
+            const script = document.createElement('script');
+            script.src = module;
+            script.type = 'module';
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>

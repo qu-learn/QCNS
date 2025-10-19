@@ -1,0 +1,7 @@
+{
+  "name": "qcns",
+  "version": "0.1",
+  "description": "Quantum Circuit and Network Simulator - A comprehensive JavaScript platform for quantum circuit simulation with modular architecture, visual network editing, and Qiskit-like API",
+  "main": "src/index.js",
+  "type": "module"
+}
