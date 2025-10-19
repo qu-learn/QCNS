@@ -1,7 +1,84 @@
 {
   "name": "qcns",
-  "version": "0.1",
-  "description": "Quantum Circuit and Network Simulator - A comprehensive JavaScript platform for quantum circuit simulation with modular architecture, visual network editing, and Qiskit-like API",
+  "version": "2.0.0",
+  "description": "Quantum Circuit and Network Simulator v2.0 - A comprehensive JavaScript platform for quantum circuit simulation with modular architecture, visual network editing, and Qiskit-like API",
   "main": "src/index.js",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "node test/test.js && node test/run_qasm_tests.js",
+    "test:core": "node test/test.js",
+    "test:qasm": "node test/run_qasm_tests.js",
+    "test:examples": "node examples/basic_usage.js && node examples/qasm_examples.js",
+    "test:all": "npm run test && npm run test:examples",
+    "build": "echo 'Build script not yet implemented'",
+    "dev": "echo 'Development server not yet implemented'",
+    "lint": "echo 'Linting not yet configured'"
+  },
+  "keywords": [
+    "quantum",
+    "circuit",
+    "simulation",
+    "qiskit",
+    "quantum-computing",
+    "quantum-simulator",
+    "javascript",
+    "es6",
+    "quantum-gates",
+    "quantum-network",
+    "openqasm",
+    "qasm",
+    "transpiler",
+    "quantum-transpiler"
+  ],
+  "author": "QCNS Development Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/qcns.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/qcns/issues"
+  },
+  "homepage": "https://github.com/your-org/qcns#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "src/",
+    "ui/",
+    "examples/",
+    "test/",
+    "docs/",
+    "README.md",
+    "DOCUMENTATION.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "styles.css"
+  ],
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    },
+    "./core": {
+      "import": "./src/core/QuantumCircuit.js"
+    },
+    "./registers": {
+      "import": "./src/core/QuantumRegister.js"
+    },
+    "./gates": {
+      "import": "./src/core/QuantumGates.js"
+    },
+    "./math": {
+      "import": "./src/core/ComplexMath.js"
+    }
+  },
+  "devDependencies": {},
+  "dependencies": {},
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }
