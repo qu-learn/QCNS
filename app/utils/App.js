@@ -27,6 +27,9 @@ class QCNSApp {
                 this.displayWelcomeMessage();
                 this.initialized = true;
                 console.log('QCNS Platform initialized successfully');
+                if (window.qulearn) {
+                    window.qulearn.onQCNSAppReady();
+                }
             })
             .catch(error => {
                 console.error('Failed to initialize QCNS Platform:', error);

@@ -484,7 +484,7 @@ class CircuitComponent {
         }
     }
 
-    exportCircuitJSON() {
+    exportCircuitJSON(asObject = false) {
         try {
             const circuit = this.buildCircuit();
             const circuitData = {
@@ -493,6 +493,10 @@ class CircuitComponent {
                 gateGrid: this.gateGrid,
                 circuit: circuit.toJSON ? circuit.toJSON() : null
             };
+
+            if (asObject) {
+                return circuitData;
+            }
 
             this.fileExporter.downloadAsJSON(circuitData, 'circuit.json');
             this.showNotification('Circuit exported as JSON', 'success');
