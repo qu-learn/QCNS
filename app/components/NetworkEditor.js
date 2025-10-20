@@ -612,7 +612,7 @@ class NetworkSimulator {
     }
 
     clearNetwork() {
-        if (!confirm('Clear all nodes and entanglements?')) return;
+        //if (!confirm('Clear all nodes and entanglements?')) return;
 
         this.network = new QuantumNetwork('QCNS Network');
         this.nodes = [];
@@ -655,7 +655,7 @@ class NetworkSimulator {
         }
     }
 
-    exportNetworkJSON() {
+    exportNetworkJSON(asObject = false) {
         if (this.nodes.length === 0) {
             this.showNotification('No network to export', 'warning');
             return;
@@ -681,6 +681,10 @@ class NetworkSimulator {
                 selectedNodeId: this.selectedNodeId
             };
 
+            if (asObject) {
+                return networkData;
+            }
+
             this.fileExporter.downloadAsJSON(networkData, 'quantum-network.json');
             this.showNotification('Network exported as JSON', 'success');
         } catch (error) {
@@ -689,10 +693,12 @@ class NetworkSimulator {
         }
     }
 
-    async importNetworkJSON() {
+    async importNetworkJSON(networkData = undefined) {
         try {
-            const result = await this.fileImporter.loadJSONFile('.json');
-            const networkData = result.data;
+            if (typeof networkData === 'undefined') {
+                const result = await this.fileImporter.loadJSONFile('.json');
+                networkData = result.data;
+            }
 
                     // Clear existing network
                     this.network = new QuantumNetwork(networkData.name || 'Imported Network');
