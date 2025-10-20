@@ -122,10 +122,10 @@ class CircuitComponent {
                 { name: 'CCX', label: 'Toffoli', class: 'control' }
             ],
             'Measurement': [
-                { name: 'measure', label: 'Measure', class: 'pauli' }
+                { name: 'M', label: 'Measure', class: 'pauli' }
             ],
             'Directives': [
-                { name: 'barrier', label: 'Barrier', class: 'barrier' }
+                { name: 'B', label: 'Barrier', class: 'barrier' }
             ]
         };
 
