@@ -1,9 +1,6 @@
 
 class QuLearnApp {
     init() {
-        // Hide platform-specific UI elements
-        document.querySelectorAll('.platform-header,.tab-nav')
-            .forEach(el => el.style.display = 'none')
     }
 
     setState(tab, state) {
