@@ -526,11 +526,21 @@ class CircuitComponent {
                 console.log('Loading from gate grid:', circuitData.gateGrid);
 
                 // CRITICAL: Store the gate grid BEFORE rendering (render calls initializeGrid which would overwrite it)
-                const savedGateGrid = circuitData.gateGrid;
+                // Deep clone to avoid read-only issues when loading from iframe
+                const savedGateGrid = JSON.parse(JSON.stringify(circuitData.gateGrid));
 
                 // Render the UI
                 this.render();
                 this.attachEventListeners();
+
+                // Re-initialize visualizer after render
+                if (this.options.showResults) {
+                    this.visualizer = new QuantumVisualizer(`${this.containerId}-visualizer`, {
+                        chartColor: 'rgba(59, 130, 246, 0.6)',
+                        chartBorderColor: 'rgba(59, 130, 246, 1)',
+                        showToggle: true
+                    });
+                }
 
                 // NOW set the gate grid after render
                 this.gateGrid = savedGateGrid;
@@ -545,6 +555,16 @@ class CircuitComponent {
                 this.circuit = window.QuantumCircuit.fromJSON(circuitData.circuit);
                 this.render();
                 this.attachEventListeners();
+
+                // Re-initialize visualizer after render
+                if (this.options.showResults) {
+                    this.visualizer = new QuantumVisualizer(`${this.containerId}-visualizer`, {
+                        chartColor: 'rgba(59, 130, 246, 0.6)',
+                        chartBorderColor: 'rgba(59, 130, 246, 1)',
+                        showToggle: true
+                    });
+                }
+
                 this.loadCircuitFromInstance();
                 console.log('Circuit instance loaded and rendered');
             } else {
