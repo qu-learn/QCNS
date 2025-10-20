@@ -597,6 +597,15 @@ class CircuitComponent {
         this.clearCircuit();
         this.render();
         this.attachEventListeners();
+
+        // Re-initialize visualizer after render
+        if (this.options.showResults) {
+            this.visualizer = new QuantumVisualizer(`${this.containerId}-visualizer`, {
+                chartColor: 'rgba(59, 130, 246, 0.6)',
+                chartBorderColor: 'rgba(59, 130, 246, 1)',
+                showToggle: true
+            });
+        }
     }
 
     updateDepth(newDepth) {
@@ -609,6 +618,15 @@ class CircuitComponent {
         this.render();
         this.attachEventListeners();
         this.loadCircuitFromGrid(); // Preserve existing gates
+
+        // Re-initialize visualizer after render
+        if (this.options.showResults) {
+            this.visualizer = new QuantumVisualizer(`${this.containerId}-visualizer`, {
+                chartColor: 'rgba(59, 130, 246, 0.6)',
+                chartBorderColor: 'rgba(59, 130, 246, 1)',
+                showToggle: true
+            });
+        }
     }
 
     loadCircuitFromGrid() {

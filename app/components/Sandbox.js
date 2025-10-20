@@ -366,63 +366,6 @@ console.log('Expected: High probability of finding |11⟩');
 visualize(results);`
             },
             {
-                id: 'network',
-                name: 'Quantum Network',
-                code: `// Create a simple quantum network
-const network = new QuantumNetwork('QKD Network');
-
-// Add two nodes
-const aliceNode = network.addNode('Alice', 2, { x: 100, y: 100 });
-const bobNode = network.addNode('Bob', 2, { x: 200, y: 200 });
-
-console.log('Alice node ID:', aliceNode.id);
-console.log('Bob node ID:', bobNode.id);
-
-// Add EPR entanglement between nodes
-network.addEntanglement(aliceNode.id, 0, bobNode.id, 0, 'EPR');
-
-// Add gates to Alice's circuit
-const aliceCircuit = network.nodes.get(aliceNode.id);
-if (aliceCircuit && aliceCircuit.circuit) {
-    aliceCircuit.circuit.h(0);
-    aliceCircuit.circuit.cx(0, 1);
-}
-
-// Add gates to Bob's circuit
-const bobCircuit = network.nodes.get(bobNode.id);
-if (bobCircuit && bobCircuit.circuit) {
-    bobCircuit.circuit.h(1);
-}
-
-// Measure all
-if (aliceCircuit) aliceCircuit.circuit.measure_all();
-if (bobCircuit) bobCircuit.circuit.measure_all();
-
-// Run network simulation
-const globalCircuit = network.toCircuit();
-const results = globalCircuit.run();
-
-console.log('Network Results:', results);
-visualize(results);`
-            },
-            {
-                id: 'rotations',
-                name: 'Rotation Gates',
-                code: `// Demonstrate parameterized rotation gates
-const circuit = new QuantumCircuit(1, 1);
-
-// Apply rotations around different axes
-circuit.rx(0, Math.PI / 4);  // X-rotation by π/4
-circuit.ry(0, Math.PI / 4);  // Y-rotation by π/4
-circuit.rz(0, Math.PI / 4);  // Z-rotation by π/4
-
-circuit.measure(0, 0);
-
-const results = circuit.run();
-console.log('Rotation Results:', results);
-visualize(results);`
-            },
-            {
                 id: 'qasm',
                 name: 'QASM Export/Import',
                 code: `// Create a circuit and export to QASM
