@@ -1808,7 +1808,7 @@ html {
 }
 
 /* Bloch Canvas */
-#${containerId}-bloch-canvas {
+.bloch-canvas {
     display: block;
     margin: 20px auto 0;
     border: 2px solid var(--border);
