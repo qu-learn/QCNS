@@ -235,7 +235,7 @@ export class GatePlacementManager {
             // For rotation gates, get parameter if not provided
             if (gateInfo.hasParameter && param === undefined) {
                 const angleStr = config.promptFunction
-                    ? config.promptFunction(`Enter rotation angle for ${gateName} (in radians, or use π):`, 'π/2')
+                    ? config.promptFunction(`Enter rotation angle for ${gateName} (in radians, or use PI):`, 'PI/2')
                     : null;
 
                 if (angleStr === null) return null;
